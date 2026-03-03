@@ -29,6 +29,9 @@ yarn-error.log*
 .env*.local
 .neon
 
+# Sensitive documentation
+DATABASE_USERS.md
+
 # IDE
 .vscode
 .idea
