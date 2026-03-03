@@ -35,6 +35,7 @@ import {
   AlertCircle,
   RotateCcw,
   Activity,
+  MessageSquare,
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -99,6 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Upload Statement', href: '/dashboard/upload', icon: Upload },
     { name: 'Reconcile', href: '/dashboard/reconcile', icon: GitCompare },
     { name: 'Customers', href: '/dashboard/customers', icon: Users },
+    { name: 'SMS Management', href: '/dashboard/sms', icon: MessageSquare },
     {
       name: 'Invoices',
       icon: FileText,
