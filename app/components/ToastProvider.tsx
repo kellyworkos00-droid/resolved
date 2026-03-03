@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 interface Toast {

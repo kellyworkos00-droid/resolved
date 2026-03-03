@@ -19,12 +19,20 @@ interface Invoice {
   customerId: string;
 }
 
+interface SmsConfigResponse {
+  smsConfiguration?: {
+    provider?: string;
+    configured?: boolean;
+    errors?: string[] | null;
+  };
+}
+
 export default function SmsManagementPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'send-reminder' | 'bulk-sms'>('overview');
-  const [smsConfig, setSmsConfig] = useState<{ enabled: boolean; provider?: string } | null>(null);
+  const [smsConfig, setSmsConfig] = useState<SmsConfigResponse | null>(null);
   const [bulkMessage, setBulkMessage] = useState('');
   const [bulkPhones, setBulkPhones] = useState('');
   const [sending, setSending] = useState(false);

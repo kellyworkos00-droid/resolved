@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Upload, BarChart3, UserPlus, ShoppingCart, Zap } from 'lucide-react';
+import { Plus, Upload, UserPlus, ShoppingCart } from 'lucide-react';
 
 export interface QuickAction {
   label: string;

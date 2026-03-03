@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -12,13 +12,8 @@ import {
   Building2,
   Wallet,
   CreditCard,
-  Settings,
   Home,
-  Plus,
-  DollarSign,
   TrendingUp,
-  PieChart,
-  Zap,
 } from 'lucide-react';
 
 interface Command {
@@ -54,6 +49,16 @@ export function CommandPalette() {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+
+  const executeCommand = useCallback((command: Command) => {
+    if (command.href) {
+      router.push(command.href);
+    } else if (command.action) {
+      command.action();
+    }
+    setOpen(false);
+    setSearch('');
+  }, [router]);
 
   // Filter commands based on search
   const filtered = COMMANDS.filter(cmd =>
@@ -94,17 +99,7 @@ export function CommandPalette() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, search, selectedIndex, filtered]);
-
-  const executeCommand = (command: Command) => {
-    if (command.href) {
-      router.push(command.href);
-    } else if (command.action) {
-      command.action();
-    }
-    setOpen(false);
-    setSearch('');
-  };
+  }, [open, selectedIndex, filtered, executeCommand]);
 
   if (!open) {
     return (

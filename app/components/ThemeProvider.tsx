@@ -14,12 +14,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system');
-  const [mounted, setMounted] = useState(false);
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
 
   // Initialize theme from localStorage on mount
   useEffect(() => {
-    setMounted(true);
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'system';
     setThemeState(savedTheme);
     applyTheme(savedTheme);
@@ -58,13 +56,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+      applyTheme(newTheme);
+    }
   };
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, effectiveTheme, setTheme }}>
