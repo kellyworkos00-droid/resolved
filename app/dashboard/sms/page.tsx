@@ -24,8 +24,7 @@ export default function SmsManagementPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'send-reminder' | 'bulk-sms'>('overview');
-  const [smsConfig, setSmsConfig] = useState<any>(null);
-  const [selectedInvoice, setSelectedInvoice] = useState<string>('');
+  const [smsConfig, setSmsConfig] = useState<{ enabled: boolean; provider?: string } | null>(null);
   const [bulkMessage, setBulkMessage] = useState('');
   const [bulkPhones, setBulkPhones] = useState('');
   const [sending, setSending] = useState(false);
@@ -263,7 +262,7 @@ export default function SmsManagementPage() {
                 <li className="flex gap-3">
                   <span className="font-bold text-primary-600 min-w-fit">1.</span>
                   <span>
-                    <strong>Send Invoice Reminders:</strong> Go to the "Send Reminders" tab to quickly send SMS reminders to customers with unpaid invoices.
+                    <strong>Send Invoice Reminders:</strong> Go to the &quot;Send Reminders&quot; tab to quickly send SMS reminders to customers with unpaid invoices.
                   </span>
                 </li>
                 <li className="flex gap-3">
@@ -275,7 +274,7 @@ export default function SmsManagementPage() {
                 <li className="flex gap-3">
                   <span className="font-bold text-primary-600 min-w-fit">3.</span>
                   <span>
-                    <strong>Bulk SMS:</strong> Use the "Bulk SMS" tab to send custom messages to multiple customers at once.
+                    <strong>Bulk SMS:</strong> Use the &quot;Bulk SMS&quot; tab to send custom messages to multiple customers at once.
                   </span>
                 </li>
                 <li className="flex gap-3">
