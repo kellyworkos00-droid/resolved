@@ -65,6 +65,7 @@ export default function Header() {
               )}
             </button>
           </div>
+        </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
