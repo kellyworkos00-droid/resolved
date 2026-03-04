@@ -1,6 +1,6 @@
 /**
  * SMS Service for Kelly OS
- * Supports Africa's Talking, Twilio, and TextSMS.co.ke for sending SMS notifications
+ * Supports Africa's Talking, Twilio, TextSMS.co.ke, and AppSMS for sending SMS notifications
  * 
  * Setup Instructions:
  * 1. For Africa's Talking:
@@ -14,12 +14,16 @@
  * 3. For TextSMS.co.ke:
  *    - Sign up at https://textsms.co.ke
  *    - Add environment variables: TEXTSMS_API_KEY, TEXTSMS_API_URL, TEXTSMS_SENDER_ID
+ * 
+ * 4. For AppSMS:
+ *    - Sign up at https://appsms.textsms.co.ke
+ *    - Add environment variables: APPSMS_API_KEY, APPSMS_API_URL, APPSMS_SENDER_ID
  */
 
 import { ExternalApiError } from '@/lib/errors';
 
 // SMS Provider configuration
-type SmsProvider = 'africastalking' | 'twilio' | 'textsms' | 'none';
+type SmsProvider = 'africastalking' | 'twilio' | 'textsms' | 'appsms' | 'none';
 
 const SMS_PROVIDER: SmsProvider = (process.env.SMS_PROVIDER as SmsProvider) || 'none';
 
@@ -28,6 +32,11 @@ function getActiveSmsProvider(): SmsProvider {
   // If SMS_PROVIDER is explicitly set, use it
   if (SMS_PROVIDER !== 'none') {
     return SMS_PROVIDER;
+  }
+  
+  // If AppSMS is enabled, use it as primary fallback
+  if (process.env.APPSMS_PROVIDER_ENABLED === 'true' && process.env.APPSMS_API_KEY) {
+    return 'appsms';
   }
   
   // If TextSMS is enabled, use it as fallback
@@ -269,6 +278,61 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
 }
 
 /**
+ * Send SMS via AppSMS
+ */
+async function sendViaAppSms(options: SendSmsOptions): Promise<SmsResult> {
+  const apiKey = process.env.APPSMS_API_KEY;
+  const apiUrl = process.env.APPSMS_API_URL || 'https://api.textsms.co.ke';
+  const senderId = process.env.APPSMS_SENDER_ID || 'KELLY_OS';
+
+  if (!apiKey) {
+    throw new ExternalApiError('AppSMS API key not configured');
+  }
+
+  try {
+    const formattedPhone = formatPhoneNumber(options.to);
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: formattedPhone,
+        message: options.message,
+        sender_id: senderId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AppSMS API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.success || data.status === 'success') {
+      return {
+        success: true,
+        provider: 'appsms',
+        messageId: data.message_id || data.id,
+      };
+    } else {
+      return {
+        success: false,
+        provider: 'appsms',
+        error: data.message || data.error || 'Failed to send SMS',
+      };
+    }
+  } catch (error) {
+    console.error('AppSMS API error:', error);
+    throw new ExternalApiError('AppSMS', 500, error);
+  }
+}
+
+/**
  * Send SMS notification
  * Automatically selects provider based on configuration
  */
@@ -309,6 +373,8 @@ export async function sendSms(options: SendSmsOptions): Promise<SmsResult> {
       return await sendViaTwilio({ ...options, message });
     } else if (activeProvider === 'textsms') {
       return await sendViaTextSms({ ...options, message });
+    } else if (activeProvider === 'appsms') {
+      return await sendViaAppSms({ ...options, message });
     }
     
     return {
@@ -476,6 +542,13 @@ export function verifySmsConfiguration(): {
     }
     if (!process.env.TEXTSMS_API_URL) {
       errors.push('TEXTSMS_API_URL not set (defaults to https://api.textsms.co.ke/api/v1/send)');
+    }
+  } else if (activeProvider === 'appsms') {
+    if (!process.env.APPSMS_API_KEY) {
+      errors.push('APPSMS_API_KEY not set');
+    }
+    if (!process.env.APPSMS_API_URL) {
+      errors.push('APPSMS_API_URL not set (defaults to https://api.textsms.co.ke)');
     }
   } else {
     errors.push(`Unknown SMS provider: ${activeProvider}`);
