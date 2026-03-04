@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
           expenseDate: { gte: startDate, lte: endDate },
         },
         include: {
-          category: true,
+          categoryRef: true,
         },
       }),
       // Supplier payments (COGS proxy)
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     let otherExpenses = 0;
 
     allExpenses.forEach((expense) => {
-      const categoryName = expense.category?.name?.toLowerCase() || '';
+      const categoryName = (expense.categoryRef?.name || expense.category || '').toLowerCase();
       const amount = expense.amount;
 
       if (categoryName.includes('salary') || categoryName.includes('wage') || categoryName.includes('payroll')) {
