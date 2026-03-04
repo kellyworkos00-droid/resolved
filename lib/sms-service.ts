@@ -1,6 +1,6 @@
 /**
  * SMS Service for Kelly OS
- * Supports Africa's Talking and Twilio for sending SMS notifications
+ * Supports Africa's Talking, Twilio, and TextSMS.co.ke for sending SMS notifications
  * 
  * Setup Instructions:
  * 1. For Africa's Talking:
@@ -10,14 +10,38 @@
  * 2. For Twilio:
  *    - Sign up at https://www.twilio.com
  *    - Add environment variables: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+ * 
+ * 3. For TextSMS.co.ke:
+ *    - Sign up at https://textsms.co.ke
+ *    - Add environment variables: TEXTSMS_API_KEY, TEXTSMS_API_URL, TEXTSMS_SENDER_ID
  */
 
 import { ExternalApiError } from '@/lib/errors';
 
 // SMS Provider configuration
-type SmsProvider = 'africastalking' | 'twilio' | 'none';
+type SmsProvider = 'africastalking' | 'twilio' | 'textsms' | 'none';
 
 const SMS_PROVIDER: SmsProvider = (process.env.SMS_PROVIDER as SmsProvider) || 'none';
+
+// Helper function to get active SMS provider
+function getActiveSmsProvider(): SmsProvider {
+  // If SMS_PROVIDER is explicitly set, use it
+  if (SMS_PROVIDER !== 'none') {
+    return SMS_PROVIDER;
+  }
+  
+  // If TextSMS is enabled, use it as fallback
+  if (process.env.TEXTSMS_PROVIDER_ENABLED === 'true' && process.env.TEXTSMS_API_KEY) {
+    return 'textsms';
+  }
+  
+  // If Africa's Talking is configured, use it as fallback
+  if (process.env.AFRICAS_TALKING_API_KEY) {
+    return 'africastalking';
+  }
+  
+  return 'none';
+}
 
 /**
  * SMS options interface
@@ -190,6 +214,61 @@ async function sendViaTwilio(options: SendSmsOptions): Promise<SmsResult> {
 }
 
 /**
+ * Send SMS via TextSMS.co.ke
+ */
+async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
+  const apiKey = process.env.TEXTSMS_API_KEY;
+  const apiUrl = process.env.TEXTSMS_API_URL || 'https://api.textsms.co.ke/api/v1/send';
+  const senderId = process.env.TEXTSMS_SENDER_ID || 'KELLY_OS';
+
+  if (!apiKey) {
+    throw new ExternalApiError('TextSMS.co.ke API key not configured');
+  }
+
+  try {
+    const formattedPhone = formatPhoneNumber(options.to);
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: formattedPhone,
+        message: options.message,
+        sender_id: senderId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`TextSMS API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.success || data.status === 'success') {
+      return {
+        success: true,
+        provider: 'textsms',
+        messageId: data.message_id || data.id,
+      };
+    } else {
+      return {
+        success: false,
+        provider: 'textsms',
+        error: data.message || data.error || 'Failed to send SMS',
+      };
+    }
+  } catch (error) {
+    console.error('TextSMS API error:', error);
+    throw new ExternalApiError('TextSMS', 500, error);
+  }
+}
+
+/**
  * Send SMS notification
  * Automatically selects provider based on configuration
  */
@@ -203,9 +282,12 @@ export async function sendSms(options: SendSmsOptions): Promise<SmsResult> {
     };
   }
 
+  // Get active provider
+  const activeProvider = getActiveSmsProvider();
+  
   // Check if SMS is configured
-  if (SMS_PROVIDER === 'none') {
-    console.warn('SMS provider not configured. Set SMS_PROVIDER environment variable.');
+  if (activeProvider === 'none') {
+    console.warn('SMS provider not configured. Set SMS_PROVIDER environment variable or configure TextSMS.');
     return {
       success: false,
       provider: 'none',
@@ -221,22 +303,24 @@ export async function sendSms(options: SendSmsOptions): Promise<SmsResult> {
 
   // Send via configured provider
   try {
-    if (SMS_PROVIDER === 'africastalking') {
+    if (activeProvider === 'africastalking') {
       return await sendViaAfricasTalking({ ...options, message });
-    } else if (SMS_PROVIDER === 'twilio') {
+    } else if (activeProvider === 'twilio') {
       return await sendViaTwilio({ ...options, message });
+    } else if (activeProvider === 'textsms') {
+      return await sendViaTextSms({ ...options, message });
     }
     
     return {
       success: false,
       provider: 'none',
-      error: `Unknown SMS provider: ${SMS_PROVIDER}`,
+      error: `Unknown SMS provider: ${activeProvider}`,
     };
   } catch (error) {
     console.error('Failed to send SMS:', error);
     return {
       success: false,
-      provider: SMS_PROVIDER,
+      provider: activeProvider,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
@@ -362,19 +446,21 @@ export function verifySmsConfiguration(): {
 } {
   const errors: string[] = [];
   
-  if (SMS_PROVIDER === 'none') {
-    errors.push('SMS_PROVIDER not set');
+  const activeProvider = getActiveSmsProvider();
+  
+  if (activeProvider === 'none') {
+    errors.push('No SMS provider configured');
     return { configured: false, provider: 'none', errors };
   }
 
-  if (SMS_PROVIDER === 'africastalking') {
+  if (activeProvider === 'africastalking') {
     if (!process.env.AFRICAS_TALKING_USERNAME) {
       errors.push('AFRICAS_TALKING_USERNAME not set');
     }
     if (!process.env.AFRICAS_TALKING_API_KEY) {
       errors.push('AFRICAS_TALKING_API_KEY not set');
     }
-  } else if (SMS_PROVIDER === 'twilio') {
+  } else if (activeProvider === 'twilio') {
     if (!process.env.TWILIO_ACCOUNT_SID) {
       errors.push('TWILIO_ACCOUNT_SID not set');
     }
@@ -384,13 +470,20 @@ export function verifySmsConfiguration(): {
     if (!process.env.TWILIO_PHONE_NUMBER) {
       errors.push('TWILIO_PHONE_NUMBER not set');
     }
+  } else if (activeProvider === 'textsms') {
+    if (!process.env.TEXTSMS_API_KEY) {
+      errors.push('TEXTSMS_API_KEY not set');
+    }
+    if (!process.env.TEXTSMS_API_URL) {
+      errors.push('TEXTSMS_API_URL not set (defaults to https://api.textsms.co.ke/api/v1/send)');
+    }
   } else {
-    errors.push(`Unknown SMS provider: ${SMS_PROVIDER}`);
+    errors.push(`Unknown SMS provider: ${activeProvider}`);
   }
 
   return {
     configured: errors.length === 0,
-    provider: SMS_PROVIDER,
+    provider: activeProvider,
     errors,
   };
 }
