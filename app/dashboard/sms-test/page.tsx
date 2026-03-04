@@ -20,9 +20,13 @@ interface SmsConfig {
 
 interface TestResult {
   success: boolean;
+  status: 'SUCCESS' | 'FAILED' | 'QUEUED';
   provider: string;
   messageId?: string;
   cost?: number;
+  statusGroup?: string;
+  statusName?: string;
+  statusDescription?: string;
   error?: string;
 }
 
@@ -91,18 +95,28 @@ export default function SmsTestPage() {
 
       const data = await response.json();
 
-      if (response.ok && data.status === 'SUCCESS') {
+      // Handle both SUCCESS and QUEUED as successful outcomes
+      if (response.ok && data.testSms?.success !== false) {
+        const queued = data.status === 'QUEUED';
         setTestResult({
-          success: true,
+          success: true,  // Both queued and delivered are successful
+          status: data.status,
           provider: data.testSms.provider,
           messageId: data.testSms.messageId,
           cost: data.testSms.cost,
+          statusGroup: data.testSms.statusGroup,
+          statusName: data.testSms.statusName,
+          statusDescription: data.testSms.statusDescription,
         });
-        toast.success('Test SMS sent successfully!');
+        toast.success(queued ? 'SMS queued by provider (awaiting delivery)' : 'Test SMS sent successfully!');
       } else {
         setTestResult({
           success: false,
+          status: 'FAILED',
           provider: data.testSms?.provider || 'unknown',
+          statusGroup: data.testSms?.statusGroup,
+          statusName: data.testSms?.statusName,
+          statusDescription: data.testSms?.statusDescription,
           error: data.testSms?.error || data.message || 'Unknown error',
         });
         toast.error(`Failed to send SMS: ${data.message || 'Unknown error'}`);
@@ -111,6 +125,7 @@ export default function SmsTestPage() {
       console.error('Error sending test SMS:', error);
       setTestResult({
         success: false,
+        status: 'FAILED',
         provider: 'unknown',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -259,25 +274,65 @@ export default function SmsTestPage() {
         {/* Test Result */}
         {testResult && (
           <div className={`mt-6 p-4 rounded-lg border ${
-            testResult.success 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
+            testResult.status === 'SUCCESS'
+              ? 'bg-green-50 border-green-200'
+              : testResult.status === 'QUEUED'
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-red-50 border-red-200'
           }`}>
             <div className="flex items-start">
-              {testResult.success ? (
+              {testResult.status === 'SUCCESS' ? (
                 <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5" />
+              ) : testResult.status === 'QUEUED' ? (
+                <AlertCircle className="w-5 h-5 text-amber-600 mr-2 mt-0.5" />
               ) : (
                 <XCircle className="w-5 h-5 text-red-600 mr-2 mt-0.5" />
               )}
               <div className="flex-1">
-                <p className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                  {testResult.success ? 'Test SMS Sent Successfully!' : 'Test SMS Failed'}
+                <p className={`font-medium ${
+                  testResult.status === 'SUCCESS'
+                    ? 'text-green-800'
+                    : testResult.status === 'QUEUED'
+                      ? 'text-amber-800'
+                      : 'text-red-800'
+                }`}>
+                  {testResult.status === 'SUCCESS'
+                    ? 'Test SMS Sent Successfully!'
+                    : testResult.status === 'QUEUED'
+                      ? 'SMS Accepted and Queued for Delivery ✓'
+                      : 'Test SMS Failed'}
                 </p>
                 
                 <div className="mt-2 space-y-1 text-sm">
-                  <div className={testResult.success ? 'text-green-700' : 'text-red-700'}>
+                  <div className={
+                    testResult.status === 'SUCCESS'
+                      ? 'text-green-700'
+                      : testResult.status === 'QUEUED'
+                        ? 'text-amber-700'
+                        : 'text-red-700'
+                  }>
                     <span className="font-medium">Provider:</span> {testResult.provider}
                   </div>
+
+                  {testResult.statusGroup && (
+                    <div className={testResult.status === 'FAILED' ? 'text-red-700' : 'text-amber-700'}>
+                      <span className="font-medium">Status:</span> {testResult.statusGroup}
+                      {testResult.statusName ? ` (${testResult.statusName})` : ''}
+                    </div>
+                  )}
+
+                  {testResult.statusDescription && (
+                    <div className={testResult.status === 'FAILED' ? 'text-red-700' : 'text-amber-700'}>
+                      <span className="font-medium">Details:</span> {testResult.statusDescription}
+                    </div>
+                  )}
+
+                  {testResult.status === 'QUEUED' && (
+                    <div className="mt-2 pt-2 border-t border-amber-200 text-amber-700 text-xs">
+                      ℹ️ <strong>Note:</strong> The SMS was successfully accepted by {testResult.provider} and queued for delivery. 
+                      Delivery typically occurs within seconds to a few minutes depending on network conditions.
+                    </div>
+                  )}
                   
                   {testResult.messageId && (
                     <div className="text-green-700">

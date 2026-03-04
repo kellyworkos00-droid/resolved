@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
       TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ? '***' : 'not set',
       TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ? '***' : 'not set',
       TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || 'not set',
+      INFOBIP_BASE_URL: process.env.INFOBIP_BASE_URL || 'not set',
+      INFOBIP_API_KEY: process.env.INFOBIP_API_KEY ? `${process.env.INFOBIP_API_KEY.substring(0, 8)}...` : 'not set',
+      INFOBIP_SENDER_ID: process.env.INFOBIP_SENDER_ID || 'not set',
     },
     status: config.configured ? 'OK' : 'NOT_CONFIGURED',
     message: config.configured 
@@ -80,6 +83,11 @@ export async function POST(request: NextRequest) {
       type: 'transactional',
     });
 
+    const isQueued = result.success && result.statusGroup === 'PENDING';
+    const responseStatus = result.success
+      ? (isQueued ? 'QUEUED' : 'SUCCESS')
+      : 'FAILED';
+
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       testSms: {
@@ -88,11 +96,16 @@ export async function POST(request: NextRequest) {
         success: result.success,
         messageId: result.messageId || null,
         cost: result.cost || null,
+        statusGroup: result.statusGroup || null,
+        statusName: result.statusName || null,
+        statusDescription: result.statusDescription || null,
         error: result.error || null,
       },
-      status: result.success ? 'SUCCESS' : 'FAILED',
+      status: responseStatus,
       message: result.success
-        ? 'Test SMS sent successfully'
+        ? (isQueued
+          ? 'SMS accepted by provider and queued (not yet delivered)'
+          : 'Test SMS sent successfully')
         : `Failed to send test SMS: ${result.error}`,
     });
   } catch (error) {

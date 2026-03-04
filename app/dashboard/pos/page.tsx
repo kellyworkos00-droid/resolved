@@ -93,9 +93,8 @@ export default function POSPage() {
     phone: '',
   });
 
-  const MAX_PRICE_DEVIATION_PERCENT = 20;
+  const MAX_PRICE_DEVIATION_PERCENT = 30;
   const MAX_DISCOUNT_PERCENT = 15;
-  const canOverridePrice = userRole === 'ADMIN' || userRole === 'FINANCE_MANAGER';
 
   useEffect(() => {
     fetchInitialData();
@@ -236,10 +235,6 @@ export default function POSPage() {
   };
 
   const updateUnitPrice = (productId: string, unitPrice: number) => {
-    if (!canOverridePrice) {
-      toast.error('Only managers can override prices');
-      return;
-    }
     if (Number.isNaN(unitPrice) || unitPrice < 0) {
       toast.error('Price must be 0 or higher');
       return;
@@ -382,13 +377,12 @@ export default function POSPage() {
         if (!item.product) return false;
         const isOverride = item.unitPrice !== item.product.price;
         if (!isOverride) return false;
-        if (!canOverridePrice) return true;
         return !isPriceDeviationAllowed(item.product, item.unitPrice);
       });
 
       if (invalidOverride) {
         toast.error(
-          `Price change exceeds ${MAX_PRICE_DEVIATION_PERCENT}% guardrail or lacks permission`
+          `Price change exceeds ${MAX_PRICE_DEVIATION_PERCENT}% limit`
         );
         return;
       }

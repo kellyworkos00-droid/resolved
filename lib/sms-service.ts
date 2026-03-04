@@ -1,6 +1,6 @@
 /**
  * SMS Service for Kelly OS
- * Supports Africa's Talking, Twilio, TextSMS.co.ke, and AppSMS for sending SMS notifications
+ * Supports Africa's Talking, Twilio, TextSMS.co.ke, AppSMS, and Infobip for sending SMS notifications
  * 
  * Setup Instructions:
  * 1. For Africa's Talking:
@@ -18,12 +18,15 @@
  * 4. For AppSMS:
  *    - Sign up at https://appsms.textsms.co.ke
  *    - Add environment variables: APPSMS_API_KEY, APPSMS_API_URL, APPSMS_SENDER_ID
+ *
+ * 5. For Infobip:
+ *    - Add environment variables: INFOBIP_BASE_URL, INFOBIP_API_KEY, INFOBIP_SENDER_ID
  */
 
 import { ExternalApiError } from '@/lib/errors';
 
 // SMS Provider configuration
-type SmsProvider = 'africastalking' | 'twilio' | 'textsms' | 'appsms' | 'none';
+type SmsProvider = 'africastalking' | 'twilio' | 'textsms' | 'appsms' | 'infobip' | 'none';
 
 const SMS_PROVIDER: SmsProvider = (process.env.SMS_PROVIDER as SmsProvider) || 'none';
 
@@ -37,6 +40,11 @@ function getActiveSmsProvider(): SmsProvider {
   // If AppSMS is enabled, use it as primary fallback
   if (process.env.APPSMS_PROVIDER_ENABLED === 'true' && process.env.APPSMS_API_KEY) {
     return 'appsms';
+  }
+
+  // If Infobip is enabled, use it as primary fallback
+  if (process.env.INFOBIP_PROVIDER_ENABLED === 'true' && process.env.INFOBIP_API_KEY) {
+    return 'infobip';
   }
   
   // If TextSMS is enabled, use it as fallback
@@ -70,6 +78,9 @@ export interface SmsResult {
   provider: string;
   cost?: number;
   error?: string;
+  statusGroup?: string;
+  statusName?: string;
+  statusDescription?: string;
 }
 
 /**
@@ -239,23 +250,25 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
     
     console.log('[TextSMS] Sending SMS:', {
       url: apiUrl,
-      phone: formattedPhone,
+      mobile: formattedPhone,
       messageLength: options.message.length,
-      senderId,
+      shortcode: senderId,
     });
     
+    // TextSMS API requires URL-encoded form data, not JSON
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        phone: formattedPhone,
+      body: new URLSearchParams({
+        apikey: apiKey,
+        partnerID: '1', // Contact TextSMS for your partner ID
+        mobile: formattedPhone,
         message: options.message,
-        sender_id: senderId,
-      }),
+        shortcode: senderId,
+      }).toString(),
     });
 
     const responseText = await response.text();
@@ -322,23 +335,25 @@ async function sendViaAppSms(options: SendSmsOptions): Promise<SmsResult> {
     
     console.log('[AppSMS] Sending SMS:', {
       url: apiUrl,
-      phone: formattedPhone,
+      mobile: formattedPhone,
       messageLength: options.message.length,
-      senderId,
+      shortcode: senderId,
     });
     
+    // AppSMS API requires URL-encoded form data, not JSON
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        phone: formattedPhone,
+      body: new URLSearchParams({
+        apikey: apiKey,
+        partnerID: '1', // Contact TextSMS for your partner ID
+        mobile: formattedPhone,
         message: options.message,
-        sender_id: senderId,
-      }),
+        shortcode: senderId,
+      }).toString(),
     });
 
     const responseText = await response.text();
@@ -378,6 +393,150 @@ async function sendViaAppSms(options: SendSmsOptions): Promise<SmsResult> {
   } catch (error) {
     console.error('[AppSMS] Exception:', error);
     throw new ExternalApiError('AppSMS', 500, error);
+  }
+}
+
+/**
+ * Send SMS via Infobip
+ */
+async function sendViaInfobip(options: SendSmsOptions): Promise<SmsResult> {
+  const apiKey = process.env.INFOBIP_API_KEY;
+  const baseUrl = process.env.INFOBIP_BASE_URL || 'https://api.infobip.com';
+  const senderId = process.env.INFOBIP_SENDER_ID || 'InfoSMS';
+
+  if (!apiKey) {
+    throw new ExternalApiError('Infobip API key not configured');
+  }
+
+  // Validate base URL format
+  if (!baseUrl.includes('infobip.com')) {
+    throw new ExternalApiError('Infobip base URL appears invalid');
+  }
+
+  try {
+    const formattedPhone = formatPhoneNumber(options.to);
+    const endpoint = `${baseUrl.replace(/\/$/, '')}/sms/2/text/advanced`;
+
+    console.log('[Infobip] Sending SMS:', {
+      url: endpoint,
+      to: formattedPhone,
+      messageLength: options.message.length,
+      from: senderId,
+      apiKeyPrefix: apiKey.substring(0, 8) + '...',
+    });
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `App ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            from: senderId,
+            destinations: [{ to: formattedPhone }],
+            text: options.message,
+          },
+        ],
+      }),
+    });
+
+    const responseText = await response.text();
+    console.log('[Infobip] Response status:', response.status);
+    console.log('[Infobip] Response body:', responseText);
+
+    if (!response.ok) {
+      // Parse error for better messaging
+      let errorMessage = `Infobip API error ${response.status}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        const serviceError = errorData?.requestError?.serviceException;
+        if (serviceError) {
+          errorMessage = `${serviceError.messageId}: ${serviceError.text}`;
+          if (response.status === 401) {
+            errorMessage += ' - Check that your INFOBIP_API_KEY and INFOBIP_BASE_URL match your Infobip account';
+          }
+        }
+      } catch (e) {
+        // Use raw error if parsing fails
+        errorMessage = `${errorMessage} - ${responseText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = JSON.parse(responseText);
+    const message = data?.messages?.[0];
+    const messageId = message?.messageId;
+    const initialStatus = message?.status;
+
+    if (!messageId) {
+      throw new Error('Infobip response missing messageId');
+    }
+
+    if (initialStatus?.groupName === 'REJECTED') {
+      return {
+        success: false,
+        provider: 'infobip',
+        messageId,
+        error: initialStatus?.description || 'Message rejected by Infobip',
+        statusGroup: initialStatus?.groupName,
+        statusName: initialStatus?.name,
+        statusDescription: initialStatus?.description,
+      };
+    }
+
+    if (initialStatus?.groupName === 'PENDING') {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        const reportResponse = await fetch(
+          `${baseUrl.replace(/\/$/, '')}/sms/1/reports?messageId=${encodeURIComponent(messageId)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `App ${apiKey}`,
+              'Accept': 'application/json',
+            },
+          }
+        );
+
+        if (reportResponse.ok) {
+          const reportData = await reportResponse.json();
+          const report = reportData?.results?.[0];
+          const finalStatus = report?.status;
+          const finalError = report?.error;
+
+          if (finalStatus?.groupName === 'REJECTED') {
+            return {
+              success: false,
+              provider: 'infobip',
+              messageId,
+              error: finalError?.description || finalStatus?.description || 'Message rejected by Infobip',
+              statusGroup: finalStatus?.groupName,
+              statusName: finalStatus?.name,
+              statusDescription: finalStatus?.description,
+            };
+          }
+        }
+      } catch (reportError) {
+        console.warn('[Infobip] Delivery report lookup failed:', reportError);
+      }
+    }
+
+    return {
+      success: true,
+      provider: 'infobip',
+      messageId,
+      cost: message?.price?.pricePerMessage,
+      statusGroup: initialStatus?.groupName,
+      statusName: initialStatus?.name,
+      statusDescription: initialStatus?.description,
+    };
+  } catch (error) {
+    console.error('[Infobip] Exception:', error);
+    throw new ExternalApiError('Infobip', 500, error);
   }
 }
 
@@ -424,6 +583,8 @@ export async function sendSms(options: SendSmsOptions): Promise<SmsResult> {
       return await sendViaTextSms({ ...options, message });
     } else if (activeProvider === 'appsms') {
       return await sendViaAppSms({ ...options, message });
+    } else if (activeProvider === 'infobip') {
+      return await sendViaInfobip({ ...options, message });
     }
     
     return {
@@ -598,6 +759,13 @@ export function verifySmsConfiguration(): {
     }
     if (!process.env.APPSMS_API_URL) {
       errors.push('APPSMS_API_URL not set (defaults to https://api.textsms.co.ke)');
+    }
+  } else if (activeProvider === 'infobip') {
+    if (!process.env.INFOBIP_API_KEY) {
+      errors.push('INFOBIP_API_KEY not set');
+    }
+    if (!process.env.INFOBIP_BASE_URL) {
+      errors.push('INFOBIP_BASE_URL not set (example: https://<subdomain>.api.infobip.com)');
     }
   } else {
     errors.push(`Unknown SMS provider: ${activeProvider}`);

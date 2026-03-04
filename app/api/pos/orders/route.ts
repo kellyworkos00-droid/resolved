@@ -5,9 +5,8 @@ import { verifyToken } from '@/lib/auth';
 import { createAuditLog, getClientIp, getUserAgent } from '@/lib/audit';
 import Decimal from 'decimal.js';
 
-const MAX_PRICE_DEVIATION_PERCENT = 20;
+const MAX_PRICE_DEVIATION_PERCENT = 30;
 const MAX_DISCOUNT_PERCENT = 15;
-const PRICE_OVERRIDE_ROLES = ['ADMIN', 'FINANCE_MANAGER'];
 
 /**
  * GET /api/pos/orders
@@ -167,13 +166,6 @@ export async function POST(request: NextRequest) {
           : product.price;
 
       const isOverride = unitPrice !== product.price;
-      if (isOverride && !PRICE_OVERRIDE_ROLES.includes(payload.role)) {
-        return NextResponse.json(
-          createErrorResponse('Price override requires manager role', 'FORBIDDEN'),
-          { status: 403 }
-        );
-      }
-
       if (product.price > 0) {
         const deviationPercent = (Math.abs(unitPrice - product.price) / product.price) * 100;
         if (deviationPercent > MAX_PRICE_DEVIATION_PERCENT) {
