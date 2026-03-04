@@ -153,9 +153,42 @@ export default function StockMovementsPage() {
           <h1 className="text-2xl font-display font-bold text-gray-900">Stock Movements</h1>
           <p className="text-sm text-gray-600">Track all inventory movements and transactions</p>
         </div>
-        <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium flex items-center gap-2 transition-colors">
+        <button 
+          onClick={() => {
+            let csv = 'Stock Movements Report\\n\\n';
+            csv += 'Movement Type,Product,SKU,Warehouse,Location,Quantity,Date,Created By,Reference,Notes\\n';
+            
+            movements.forEach(movement => {
+              const userName = `${movement.createdByUser.firstName} ${movement.createdByUser.lastName}`.trim();
+              csv += `${getMovementTypeLabel(movement.movementType)},`;
+              csv += `"${movement.product.name}",${movement.product.sku},`;
+              csv += `${movement.warehouse.code},${movement.location.code},`;
+              csv += `${movement.quantity},${new Date(movement.createdAt).toLocaleDateString()},`;
+              csv += `"${userName}",${movement.referenceType || 'N/A'},`;
+              csv += `"${movement.notes || 'N/A'}"\\n`;
+            });
+            
+            csv += `\\nSummary:\\n`;
+            csv += `Total Movements,${summary?.totalMovements || 0}\\n`;
+            csv += `Inbound Movements,${summary?.inboundMovements || 0}\\n`;
+            csv += `Outbound Movements,${summary?.outboundMovements || 0}\\n`;
+            csv += `Total Quantity In,${summary?.totalQuantityIn || 0}\\n`;
+            csv += `Total Quantity Out,${summary?.totalQuantityOut || 0}\\n`;
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stock-movements-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            toast.success('Stock movements exported successfully!');
+          }}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium flex items-center gap-2 transition-colors"
+        >
           <Download className="w-4 h-4" />
-          Export Report
+          Export CSV
         </button>
       </div>
 
