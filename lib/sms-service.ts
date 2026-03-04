@@ -237,6 +237,13 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
   try {
     const formattedPhone = formatPhoneNumber(options.to);
     
+    console.log('[TextSMS] Sending SMS:', {
+      url: apiUrl,
+      phone: formattedPhone,
+      messageLength: options.message.length,
+      senderId,
+    });
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -251,20 +258,34 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
       }),
     });
 
+    const responseText = await response.text();
+    console.log('[TextSMS] Response status:', response.status);
+    console.log('[TextSMS] Response body:', responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`TextSMS API error: ${response.status} - ${errorText}`);
+      console.error('[TextSMS] API error:', response.status, responseText);
+      throw new Error(`TextSMS API error: ${response.status} - ${responseText}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('[TextSMS] Failed to parse response:', responseText);
+      throw new Error(`Invalid JSON response from TextSMS: ${responseText}`);
+    }
+    
+    console.log('[TextSMS] Parsed response:', data);
     
     if (data.success || data.status === 'success') {
+      console.log('[TextSMS] SMS sent successfully:', data.message_id || data.id);
       return {
         success: true,
         provider: 'textsms',
         messageId: data.message_id || data.id,
       };
     } else {
+      console.error('[TextSMS] SMS sending failed:', data.message || data.error);
       return {
         success: false,
         provider: 'textsms',
@@ -272,7 +293,14 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
       };
     }
   } catch (error) {
-    console.error('TextSMS API error:', error);
+    console.error('[TextSMS] Exception:', error);
+    if (error instanceof Error) {
+      console.error('[TextSMS] Error details:', {
+        name: error.name,
+        message: error.message,
+        cause: error.cause,
+      });
+    }
     throw new ExternalApiError('TextSMS', 500, error);
   }
 }
