@@ -66,38 +66,92 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden light">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden light">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className={`max-w-xl w-full mx-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        <div className="bg-white backdrop-blur-lg rounded-3xl shadow-2xl p-10 border border-gray-100">
-          {/* Logo and Header */}
-          <div className="text-center mb-10">
-            <div className="inline-block mb-6 relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-              <div className="relative bg-white rounded-2xl p-3 shadow-lg">
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className={`max-w-6xl w-full grid lg:grid-cols-2 gap-8 lg:gap-12 items-center transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          
+          {/* Left Side - Logo & Brand */}
+          <div className="hidden lg:flex flex-col items-center justify-center space-y-8 text-center">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
+              <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
                 <Image
                   src="/images/elegant-logo.jpg"
                   alt="Kelly OS Logo"
-                  width={100}
-                  height={100}
-                  className="rounded-xl"
+                  width={200}
+                  height={200}
+                  className="rounded-2xl"
                 />
               </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Kelly OS
-            </h1>
-            <p className="text-gray-700 mt-3 flex items-center justify-center gap-2 text-lg">
-              <Shield className="w-5 h-5" />
-              Enterprise Resource Planning
-            </p>
+            <div className="space-y-4">
+              <h1 className="text-6xl font-bold text-white drop-shadow-2xl">
+                Kelly OS
+              </h1>
+              <p className="text-2xl text-blue-200 font-semibold">
+                Enterprise Resource Planning
+              </p>
+              <div className="flex items-center justify-center gap-3 text-blue-100">
+                <Shield className="w-6 h-6" />
+                <span className="text-lg">Trusted by Leading Enterprises</span>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
+                <p className="text-white font-semibold">Secure</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
+                <p className="text-white font-semibold">Fast</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
+                <p className="text-white font-semibold">Reliable</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
+                <p className="text-white font-semibold">Modern</p>
+              </div>
+            </div>
           </div>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full">
+            <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/50">
+              {/* Mobile Logo */}
+              <div className="lg:hidden text-center mb-8">
+                <div className="inline-block mb-4 relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25"></div>
+                  <div className="relative bg-white rounded-2xl p-3 shadow-lg">
+                    <Image
+                      src="/images/elegant-logo.jpg"
+                      alt="Kelly OS Logo"
+                      width={80}
+                      height={80}
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Kelly OS
+                </h1>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                <p className="text-gray-600 text-lg">Sign in to continue to your account</p>
+              </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,45 +258,118 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="mt-8 mb-8 flex items-center">
-            <div className="flex-1 border-t-2 border-gray-200"></div>
-            <span className="px-4 text-sm text-gray-600 font-bold">SECURE LOGIN</span>
-            <div className="flex-1 border-t-2 border-gray-200"></div>
+            <div className="flex-1 border-t-2 border-gray-300"></div>
+            <span className="px-4 text-sm text-gray-600 font-bold uppercase tracking-wider">Secure Access</span>
+            <div className="flex-1 border-t-2 border-gray-300"></div>
           </div>
 
-          {/* Security Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border-2 border-blue-200">
-            <p className="text-base text-gray-700 text-center flex items-center justify-center gap-2 font-semibold">
-              <Lock className="w-5 h-5 text-blue-600" />
-              Protected by enterprise-grade encryption
-            </p>
-          </div>
-
-          {/* System Status */}
-          <div className="bg-green-50 rounded-xl p-5 border-2 border-green-200 mt-4">
-            <p className="text-base text-gray-700 text-center flex items-center justify-center gap-2 font-semibold">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              All systems operational
-            </p>
+          {/* Security Badges */}
+          <div className="grid grid-cols-1 gap-3">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+              <p className="text-sm text-gray-700 text-center flex items-center justify-center gap-2 font-semibold">
+                <Lock className="w-5 h-5 text-blue-600" />
+                256-bit Enterprise Encryption
+              </p>
+            </div>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+              <p className="text-sm text-gray-700 text-center flex items-center justify-center gap-2 font-semibold">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                All Systems Operational
+              </p>
+            </div>
           </div>
 
           {/* Legal Links */}
-          <div className="mt-8 flex items-center justify-center gap-6 text-base text-gray-600 font-semibold">
-            <Link href="/PRIVACY_POLICY.md" className="hover:text-blue-600 transition-colors">
+          <div className="mt-6 flex items-center justify-center gap-6 text-sm text-gray-600">
+            <Link href="/PRIVACY_POLICY.md" className="hover:text-blue-600 transition-colors font-medium">
               Privacy Policy
             </Link>
             <span>•</span>
-            <Link href="/TERMS_OF_SERVICE.md" className="hover:text-blue-600 transition-colors">
+            <Link href="/TERMS_OF_SERVICE.md" className="hover:text-blue-600 transition-colors font-medium">
               Terms of Service
             </Link>
           </div>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-base text-gray-700 mt-8 flex items-center justify-center gap-2 font-semibold">
-          <Shield className="w-5 h-5" />
-          <span>© 2026 Kelly OS. Enterprise ERP Solution.</span>
-        </p>
       </div>
+    </div>
+  </div>
+
+      {/* Premium Footer with Sliding Logos */}
+      <footer className="relative z-10 bg-white/10 backdrop-blur-xl border-t border-white/20 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Trusted By Section */}
+          <div className="text-center mb-6">
+            <p className="text-white/80 text-sm font-semibold uppercase tracking-wider mb-4">
+              Trusted By & Integrated With
+            </p>
+          </div>
+
+          {/* Sliding Logo Carousel */}
+          <div className="relative overflow-hidden">
+            <div className="flex items-center justify-center gap-12 animate-slide">
+              {/* Kelly OS Logo */}
+              <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
+                <div className="w-32 h-20 flex items-center justify-center">
+                  <Image
+                    src="/images/elegant-logo.jpg"
+                    alt="Kelly OS"
+                    width={80}
+                    height={80}
+                    className="rounded-lg object-contain"
+                  />
+                </div>
+                <p className="text-center text-xs font-bold text-gray-700 mt-2">Kelly OS</p>
+              </div>
+
+              {/* M-Pesa Logo */}
+              <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
+                <div className="w-32 h-20 flex items-center justify-center">
+                  <div className="text-4xl font-bold text-green-600">M-PESA</div>
+                </div>
+                <p className="text-center text-xs font-bold text-gray-700 mt-2">Payment Partner</p>
+              </div>
+
+              {/* Equity Bank Logo */}
+              <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
+                <div className="w-32 h-20 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-red-700">EQUITY</div>
+                    <div className="text-sm font-semibold text-gray-700">BANK</div>
+                  </div>
+                </div>
+                <p className="text-center text-xs font-bold text-gray-700 mt-2">Banking Partner</p>
+              </div>
+
+              {/* Odoo Logo */}
+              <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
+                <div className="w-32 h-20 flex items-center justify-center">
+                  <div className="text-4xl font-bold text-purple-700">odoo</div>
+                </div>
+                <p className="text-center text-xs font-bold text-gray-700 mt-2">ERP Integration</p>
+              </div>
+
+              {/* WhatsApp Business */}
+              <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
+                <div className="w-32 h-20 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">WhatsApp</div>
+                    <div className="text-sm font-semibold text-gray-700">Business</div>
+                  </div>
+                </div>
+                <p className="text-center text-xs font-bold text-gray-700 mt-2">@kellyos</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="mt-8 text-center">
+            <p className="text-white/70 text-sm flex items-center justify-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span>© 2026 Kelly OS - Enterprise ERP Solution. All rights reserved.</span>
+            </p>
+          </div>
+        </div>
+      </footer>
 
       <style jsx>{`
         @keyframes blob {
@@ -267,6 +394,16 @@ export default function LoginPage() {
         }
         .animate-shake {
           animation: shake 0.5s;
+        }
+        @keyframes slide {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-slide {
+          animation: slide 20s linear infinite;
+        }
+        .animate-slide:hover {
+          animation-play-state: paused;
         }
       `}</style>
     </div>
