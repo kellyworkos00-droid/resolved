@@ -84,7 +84,7 @@ export default function LoginPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition duration-500"></div>
               <div className="relative bg-white backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-gray-200">
                 <Image
-                  src="/images/elegant-logo.jpg"
+                  src="/WhatsApp Image 2026-03-04 at 6.40.14 PM.jpeg"
                   alt="Kelly OS Logo"
                   width={200}
                   height={200}
@@ -324,7 +324,13 @@ export default function LoginPage() {
               {/* M-Pesa Logo */}
               <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
                 <div className="w-32 h-20 flex items-center justify-center">
-                  <div className="text-4xl font-bold text-green-600">M-PESA</div>
+                  <Image
+                    src="/mpesa logo.png"
+                    alt="M-Pesa"
+                    width={100}
+                    height={60}
+                    className="object-contain"
+                  />
                 </div>
                 <p className="text-center text-xs font-bold text-gray-700 mt-2">Payment Partner</p>
               </div>
@@ -332,10 +338,13 @@ export default function LoginPage() {
               {/* Equity Bank Logo */}
               <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
                 <div className="w-32 h-20 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-red-700">EQUITY</div>
-                    <div className="text-sm font-semibold text-gray-700">BANK</div>
-                  </div>
+                  <Image
+                    src="/equiti bank logo.png"
+                    alt="Equity Bank"
+                    width={100}
+                    height={60}
+                    className="object-contain"
+                  />
                 </div>
                 <p className="text-center text-xs font-bold text-gray-700 mt-2">Banking Partner</p>
               </div>
@@ -343,7 +352,13 @@ export default function LoginPage() {
               {/* Odoo Logo */}
               <div className="flex-shrink-0 bg-white/90 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/50 hover:scale-110 transition-transform duration-300">
                 <div className="w-32 h-20 flex items-center justify-center">
-                  <div className="text-4xl font-bold text-purple-700">odoo</div>
+                  <Image
+                    src="/odoo logo.png"
+                    alt="Odoo"
+                    width={100}
+                    height={60}
+                    className="object-contain"
+                  />
                 </div>
                 <p className="text-center text-xs font-bold text-gray-700 mt-2">ERP Integration</p>
               </div>
