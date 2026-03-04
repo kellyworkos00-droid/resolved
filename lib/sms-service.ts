@@ -283,7 +283,7 @@ async function sendViaTextSms(options: SendSmsOptions): Promise<SmsResult> {
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch (parseError) {
+    } catch {
       console.error('[TextSMS] Failed to parse response:', responseText);
       throw new Error(`Invalid JSON response from TextSMS: ${responseText}`);
     }
@@ -368,7 +368,7 @@ async function sendViaAppSms(options: SendSmsOptions): Promise<SmsResult> {
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch (parseError) {
+    } catch {
       console.error('[AppSMS] Failed to parse response:', responseText);
       throw new Error(`Invalid JSON response from AppSMS: ${responseText}`);
     }
@@ -459,7 +459,7 @@ async function sendViaInfobip(options: SendSmsOptions): Promise<SmsResult> {
             errorMessage += ' - Check that your INFOBIP_API_KEY and INFOBIP_BASE_URL match your Infobip account';
           }
         }
-      } catch (e) {
+      } catch {
         // Use raw error if parsing fails
         errorMessage = `${errorMessage} - ${responseText}`;
       }

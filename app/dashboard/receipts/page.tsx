@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Download, Printer, Eye, Search, Calendar, Filter } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Download, Printer, Eye, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -47,11 +47,7 @@ export default function ReceiptsPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    fetchReceipts();
-  }, [page, filters]);
-
-  const fetchReceipts = async () => {
+  const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -87,7 +83,11 @@ export default function ReceiptsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filters]);
+
+  useEffect(() => {
+    fetchReceipts();
+  }, [fetchReceipts]);
 
   const handleDownload = async (paymentId: string, paymentNumber: string) => {
     try {
@@ -119,7 +119,6 @@ export default function ReceiptsPage() {
   };
 
   const handlePrint = (paymentId: string) => {
-    const token = localStorage.getItem('token');
     const url = `/api/receipts/${paymentId}?format=html`;
     const printWindow = window.open(url, '_blank');
     if (printWindow) {
@@ -132,7 +131,6 @@ export default function ReceiptsPage() {
   };
 
   const handlePreview = (paymentId: string) => {
-    const token = localStorage.getItem('token');
     window.open(`/api/receipts/${paymentId}?format=html`, '_blank');
   };
 

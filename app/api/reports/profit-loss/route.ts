@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -12,66 +13,148 @@ export async function GET(request: NextRequest) {
 
     const period = request.nextUrl.searchParams.get('period') || 'monthly';
 
-    // Mock P&L data based on period
-    const baseData = {
-      revenue: 18500000,
-      costOfGoods: 9250000,
-      operatingExpenses: 5200000,
-      interestExpense: 250000,
-      taxExpense: 1350000,
-      breakdown: {
-        sales: 15000000,
-        serviceIncome: 3500000,
-        costOfSales: 9250000,
-        salaries: 3200000,
-        utilities: 650000,
-        depreciation: 850000,
-        otherExpenses: 500000,
-      },
-    };
-
-    // Calculate derived values
-    const grossProfit = baseData.revenue - baseData.costOfGoods;
-    const grossProfitMargin = (grossProfit / baseData.revenue) * 100;
-    const operatingIncome = grossProfit - baseData.operatingExpenses;
-    const netIncome = operatingIncome - baseData.interestExpense - baseData.taxExpense;
-    const netProfitMargin = (netIncome / baseData.revenue) * 100;
-
-    // Adjust values based on period
-    let multiplier = 1;
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate: Date;
+    const endDate = new Date(now.setHours(23, 59, 59, 999));
     let periodName = 'Monthly';
 
     switch (period) {
       case 'quarterly':
-        multiplier = 3;
+        startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
         periodName = 'Quarterly';
         break;
       case 'yearly':
-        multiplier = 12;
+        startDate = new Date(now.getFullYear(), 0, 1);
         periodName = 'Yearly';
         break;
+      case 'monthly':
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodName = 'Monthly';
+        break;
     }
+    startDate.setHours(0, 0, 0, 0);
+
+    // Fetch revenue data
+    const [
+      confirmedPayments,
+      completedPosOrders,
+      invoiceRevenue,
+      allExpenses,
+      supplierPayments,
+    ] = await Promise.all([
+      // Payments (customer payments on invoices)
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: {
+          paymentDate: { gte: startDate, lte: endDate },
+          status: { in: ['CONFIRMED', 'RECONCILED'] },
+        },
+      }),
+      // POS orders (direct sales)
+      prisma.posOrder.aggregate({
+        _sum: { totalAmount: true, subtotal: true, tax: true },
+        where: {
+          createdAt: { gte: startDate, lte: endDate },
+          paymentStatus: 'PAID',
+        },
+      }),
+      // Sales orders/invoices created in period
+      prisma.invoice.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          issueDate: { gte: startDate, lte: endDate },
+          status: { in: ['SENT', 'PAID', 'PARTIALLY_PAID'] },
+        },
+      }),
+      // Operating expenses
+      prisma.expense.findMany({
+        where: {
+          expenseDate: { gte: startDate, lte: endDate },
+        },
+        include: {
+          category: true,
+        },
+      }),
+      // Supplier payments (COGS proxy)
+      prisma.supplierPayment.aggregate({
+        _sum: { amount: true },
+        where: {
+          paymentDate: { gte: startDate, lte: endDate },
+        },
+      }),
+    ]);
+
+    // Calculate revenue
+    const paymentRevenue = confirmedPayments._sum.amount || 0;
+    const posRevenue = completedPosOrders._sum.totalAmount || 0;
+    const invoiceRevenueTotal = invoiceRevenue._sum.totalAmount || 0;
+    
+    // Use the higher of payment/POS vs invoice totals to avoid double counting
+    const sales = Math.max(paymentRevenue, posRevenue);
+    const serviceIncome = invoiceRevenueTotal > sales ? invoiceRevenueTotal - sales : 0;
+    const revenue = sales + serviceIncome;
+
+    // Calculate Cost of Goods Sold (using supplier payments as proxy)
+    const costOfGoods = supplierPayments._sum.amount || 0;
+
+    // Categorize expenses
+    let salaries = 0;
+    let utilities = 0;
+    let depreciation = 0;
+    let interestExpense = 0;
+    let taxExpense = 0;
+    let otherExpenses = 0;
+
+    allExpenses.forEach((expense) => {
+      const categoryName = expense.category?.name?.toLowerCase() || '';
+      const amount = expense.amount;
+
+      if (categoryName.includes('salary') || categoryName.includes('wage') || categoryName.includes('payroll')) {
+        salaries += amount;
+      } else if (categoryName.includes('utility') || categoryName.includes('utilities') || categoryName.includes('electric') || categoryName.includes('water')) {
+        utilities += amount;
+      } else if (categoryName.includes('depreciation') || categoryName.includes('amortization')) {
+        depreciation += amount;
+      } else if (categoryName.includes('interest') || categoryName.includes('loan') || categoryName.includes('finance')) {
+        interestExpense += amount;
+      } else if (categoryName.includes('tax')) {
+        taxExpense += amount;
+      } else {
+        otherExpenses += amount;
+      }
+    });
+
+    const operatingExpenses = salaries + utilities + depreciation + otherExpenses;
+
+    // Calculate P&L metrics
+    const grossProfit = revenue - costOfGoods;
+    const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
+    const operatingIncome = grossProfit - operatingExpenses;
+    const netIncome = operatingIncome - interestExpense - taxExpense;
+    const netProfitMargin = revenue > 0 ? (netIncome / revenue) * 100 : 0;
 
     const data = {
       period: periodName,
-      revenue: baseData.revenue * multiplier,
-      costOfGoods: baseData.costOfGoods * multiplier,
-      grossProfit: grossProfit * multiplier,
-      grossProfitMargin: grossProfitMargin,
-      operatingExpenses: baseData.operatingExpenses * multiplier,
-      operatingIncome: operatingIncome * multiplier,
-      interestExpense: baseData.interestExpense * multiplier,
-      taxExpense: baseData.taxExpense * multiplier,
-      netIncome: netIncome * multiplier,
-      netProfitMargin: netProfitMargin,
+      revenue,
+      costOfGoods,
+      grossProfit,
+      grossProfitMargin,
+      operatingExpenses,
+      operatingIncome,
+      interestExpense,
+      taxExpense,
+      netIncome,
+      netProfitMargin,
       breakdown: {
-        sales: baseData.breakdown.sales * multiplier,
-        serviceIncome: baseData.breakdown.serviceIncome * multiplier,
-        costOfSales: baseData.breakdown.costOfSales * multiplier,
-        salaries: baseData.breakdown.salaries * multiplier,
-        utilities: baseData.breakdown.utilities * multiplier,
-        depreciation: baseData.breakdown.depreciation * multiplier,
-        otherExpenses: baseData.breakdown.otherExpenses * multiplier,
+        sales,
+        serviceIncome,
+        costOfSales: costOfGoods,
+        salaries,
+        utilities,
+        depreciation,
+        otherExpenses,
       },
     };
 

@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/authorization';
 import prisma from '@/lib/prisma';
 
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search'); // Search by payment number or reference
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.PaymentWhereInput = {};
 
     if (customerId) {
       where.customerId = customerId;

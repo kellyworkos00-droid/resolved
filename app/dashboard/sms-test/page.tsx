@@ -369,7 +369,7 @@ export default function SmsTestPage() {
             <strong>TextSMS.co.ke:</strong> Secondary fallback provider. API key: dd16c128-63c1-42b4-ae01-d6915b591821
           </p>
           <p>
-            <strong>Africa's Talking:</strong> Tertiary fallback provider configured for testing.
+            <strong>Africa&apos;s Talking:</strong> Tertiary fallback provider configured for testing.
           </p>
           <p className="mt-3">
             <strong>Note:</strong> The system automatically selects the first available and properly configured provider.

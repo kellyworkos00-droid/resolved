@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { Plus, Minus, X, ShoppingCart, Check } from 'lucide-react';
+import { Plus, Minus, X, ShoppingCart, Check, Eye } from 'lucide-react';
 import Decimal from 'decimal.js';
 
 interface Product {
@@ -83,7 +83,7 @@ export default function POSPage() {
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [updatingPaymentStatus, setUpdatingPaymentStatus] = useState(false);
-  const [userRole, setUserRole] = useState<'ADMIN' | 'FINANCE_MANAGER' | 'FINANCE_STAFF' | 'VIEWER'>('VIEWER');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customerForm, setCustomerForm] = useState({
     customerCode: '',
     name: '',
@@ -95,19 +95,6 @@ export default function POSPage() {
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return;
-    try {
-      const parsed = JSON.parse(storedUser) as { role?: typeof userRole };
-      if (parsed?.role) {
-        setUserRole(parsed.role);
-      }
-    } catch {
-      setUserRole('VIEWER');
-    }
   }, []);
 
   useEffect(() => {
@@ -640,10 +627,9 @@ export default function POSPage() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {filteredProducts.map((product) => (
-                <button
+                <div
                   key={product.id}
-                  onClick={() => addToCart(product)}
-                  className="bg-gray-50 rounded-2xl overflow-hidden shadow hover:shadow-lg transition text-left hover:bg-blue-50"
+                  className="bg-gray-50 rounded-2xl overflow-hidden shadow hover:shadow-lg transition"
                 >
                   <div className="relative w-full h-24 sm:h-28 lg:h-32 bg-gray-200">
                     {product.imageUrl ? (
@@ -664,12 +650,30 @@ export default function POSPage() {
                     <h3 className="font-semibold text-gray-900 line-clamp-2 text-sm sm:text-base">
                       {product.name}
                     </h3>
+                    <p className="text-xs text-gray-500 mt-1">SKU: {product.sku}</p>
                     <p className="text-base sm:text-lg font-bold text-blue-600 mt-2">
                       KES {product.price.toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-600">Stock: {product.quantity}</p>
+                    
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="flex-1 flex items-center justify-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-1.5 px-2 rounded-lg text-xs font-medium transition"
+                      >
+                        <Eye size={14} />
+                        <span>View</span>
+                      </button>
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg text-xs font-medium transition"
+                      >
+                        <Plus size={14} />
+                        <span>Add</span>
+                      </button>
+                    </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -941,6 +945,90 @@ export default function POSPage() {
               >
                 {creatingCustomer ? 'Saving...' : 'Save Customer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900">Product Details</h3>
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="relative w-full md:w-64 h-64 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                  {selectedProduct.imageUrl ? (
+                    <Image
+                      src={selectedProduct.imageUrl}
+                      alt={selectedProduct.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <ShoppingCart size={64} className="text-gray-400" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h2>
+                    <p className="text-sm text-gray-500 mt-1">SKU: {selectedProduct.sku}</p>
+                  </div>
+
+                  {selectedProduct.description && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Description</h4>
+                      <p className="text-gray-600">{selectedProduct.description}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">Price</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        KES {selectedProduct.price.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">Stock Available</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {selectedProduct.quantity}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      onClick={() => {
+                        addToCart(selectedProduct);
+                        setSelectedProduct(null);
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                      disabled={selectedProduct.quantity === 0}
+                    >
+                      <Plus size={20} />
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={() => setSelectedProduct(null)}
+                      className="px-6 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

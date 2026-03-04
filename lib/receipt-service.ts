@@ -329,7 +329,8 @@ export function generateReceiptPDF(
     margin: { top: yPos },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  const lastAutoTable = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable;
+  yPos = (lastAutoTable?.finalY ?? yPos) + 15;
 
   // Notes (if any)
   if (receiptData.notes) {

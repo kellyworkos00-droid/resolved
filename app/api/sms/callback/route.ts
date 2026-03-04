@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 /**
  * SMS Callback/Webhook Endpoint
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
 /**
  * GET endpoint for testing the callback URL
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({
     endpoint: 'SMS Callback/Webhook',
     status: 'active',
