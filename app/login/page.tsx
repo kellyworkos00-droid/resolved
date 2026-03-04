@@ -66,12 +66,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden light">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-200 rounded-full mix-blend-overlay filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-200 rounded-full mix-blend-overlay filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-200 rounded-full mix-blend-overlay filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
 
       {/* Main Content */}
@@ -81,8 +81,8 @@ export default function LoginPage() {
           {/* Left Side - Logo & Brand */}
           <div className="hidden lg:flex flex-col items-center justify-center space-y-8 text-center">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
-              <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition duration-500"></div>
+              <div className="relative bg-white backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-gray-200">
                 <Image
                   src="/images/elegant-logo.jpg"
                   alt="Kelly OS Logo"
@@ -93,13 +93,13 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="space-y-4">
-              <h1 className="text-6xl font-bold text-white drop-shadow-2xl">
+              <h1 className="text-6xl font-bold text-gray-900 drop-shadow-lg">
                 Kelly OS
               </h1>
-              <p className="text-2xl text-blue-200 font-semibold">
+              <p className="text-2xl text-blue-700 font-semibold">
                 Enterprise Resource Planning
               </p>
-              <div className="flex items-center justify-center gap-3 text-blue-100">
+              <div className="flex items-center justify-center gap-3 text-gray-700">
                 <Shield className="w-6 h-6" />
                 <span className="text-lg">Trusted by Leading Enterprises</span>
               </div>
@@ -107,21 +107,21 @@ export default function LoginPage() {
 
             {/* Features */}
             <div className="grid grid-cols-2 gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
-                <p className="text-white font-semibold">Secure</p>
+              <div className="bg-white backdrop-blur-lg rounded-xl p-4 border border-gray-200 shadow-lg">
+                <CheckCircle2 className="w-8 h-8 text-green-600 mb-2" />
+                <p className="text-gray-900 font-semibold">Secure</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
-                <p className="text-white font-semibold">Fast</p>
+              <div className="bg-white backdrop-blur-lg rounded-xl p-4 border border-gray-200 shadow-lg">
+                <CheckCircle2 className="w-8 h-8 text-green-600 mb-2" />
+                <p className="text-gray-900 font-semibold">Fast</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
-                <p className="text-white font-semibold">Reliable</p>
+              <div className="bg-white backdrop-blur-lg rounded-xl p-4 border border-gray-200 shadow-lg">
+                <CheckCircle2 className="w-8 h-8 text-green-600 mb-2" />
+                <p className="text-gray-900 font-semibold">Reliable</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <CheckCircle2 className="w-8 h-8 text-green-400 mb-2" />
-                <p className="text-white font-semibold">Modern</p>
+              <div className="bg-white backdrop-blur-lg rounded-xl p-4 border border-gray-200 shadow-lg">
+                <CheckCircle2 className="w-8 h-8 text-green-600 mb-2" />
+                <p className="text-gray-900 font-semibold">Modern</p>
               </div>
             </div>
           </div>
@@ -295,11 +295,11 @@ export default function LoginPage() {
   </div>
 
       {/* Premium Footer with Sliding Logos */}
-      <footer className="relative z-10 bg-white/10 backdrop-blur-xl border-t border-white/20 py-8">
+      <footer className="relative z-10 bg-white/90 backdrop-blur-xl border-t border-gray-200 py-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4">
           {/* Trusted By Section */}
           <div className="text-center mb-6">
-            <p className="text-white/80 text-sm font-semibold uppercase tracking-wider mb-4">
+            <p className="text-gray-700 text-sm font-semibold uppercase tracking-wider mb-4">
               Trusted By & Integrated With
             </p>
           </div>
@@ -363,7 +363,7 @@ export default function LoginPage() {
 
           {/* Copyright */}
           <div className="mt-8 text-center">
-            <p className="text-white/70 text-sm flex items-center justify-center gap-2">
+            <p className="text-gray-600 text-sm flex items-center justify-center gap-2">
               <Shield className="w-4 h-4" />
               <span>© 2026 Kelly OS - Enterprise ERP Solution. All rights reserved.</span>
             </p>
