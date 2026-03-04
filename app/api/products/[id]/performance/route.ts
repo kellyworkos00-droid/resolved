@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { createSuccessResponse, createErrorResponse } from '@/lib/api-response';
-import { authMiddleware } from '@/lib/auth';
+import { createSuccessResponse, createErrorResponse } from '@/lib/utils';
+import { verifyToken } from '@/lib/auth';
 
 /**
  * GET /api/products/[id]/performance
@@ -12,10 +12,18 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authResult = await authMiddleware(request);
-    if (!authResult.authenticated) {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
       return NextResponse.json(
         createErrorResponse('Unauthorized', 'UNAUTHORIZED', 401),
+        { status: 401 }
+      );
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        createErrorResponse('Invalid token', 'INVALID_TOKEN', 401),
         { status: 401 }
       );
     }
