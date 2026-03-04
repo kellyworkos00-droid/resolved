@@ -82,11 +82,46 @@ export default function ProfitLossPage() {
             <option value="yearly">This Year</option>
           </select>
           <button 
-            onClick={() => toast.success('Export feature coming soon!')}
+            onClick={() => {
+              if (!data) return;
+              
+              let csv = `Profit & Loss Statement - ${data.period}\n\n`;
+              csv += 'Account,Amount\n';
+              csv += '\nREVENUES\n';
+              csv += `Sales Revenue,${data.breakdown.sales}\n`;
+              csv += `Service Income,${data.breakdown.serviceIncome}\n`;
+              csv += `Total Revenue,${data.revenue}\n`;
+              csv += '\nCOST OF GOODS SOLD\n';
+              csv += `Cost of Sales,${data.breakdown.costOfSales}\n`;
+              csv += `Total COGS,${data.costOfGoods}\n`;
+              csv += `\nGross Profit,${data.grossProfit}\n`;
+              csv += `Gross Profit Margin,${data.grossProfitMargin.toFixed(2)}%\n`;
+              csv += '\nOPERATING EXPENSES\n';
+              csv += `Salaries,${data.breakdown.salaries}\n`;
+              csv += `Utilities,${data.breakdown.utilities}\n`;
+              csv += `Depreciation,${data.breakdown.depreciation}\n`;
+              csv += `Other Expenses,${data.breakdown.otherExpenses}\n`;
+              csv += `Total Operating Expenses,${data.operatingExpenses}\n`;
+              csv += `\nOperating Income,${data.operatingIncome}\n`;
+              csv += `Interest Expense,${data.interestExpense}\n`;
+              csv += `Tax Expense,${data.taxExpense}\n`;
+              csv += `\nNet Income,${data.netIncome}\n`;
+              csv += `Net Profit Margin,${data.netProfitMargin.toFixed(2)}%\n`;
+              
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `profit-loss-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              toast.success('P&L statement exported successfully!');
+            }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 text-sm font-medium shadow-sm"
           >
             <Download className="w-4 h-4" />
-            Export PDF
+            Export CSV
           </button>
         </div>
       </div>

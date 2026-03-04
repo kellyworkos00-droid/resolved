@@ -102,11 +102,30 @@ export default function CustomerBalancesPage() {
             Refresh
           </button>
           <button
-            onClick={() => toast.success('Export feature coming soon!')}
+            onClick={() => {
+              let csv = 'Customer Balances Report\n\n';
+              csv += 'Customer Code,Customer Name,Email,Phone,Total Invoiced,Total Paid,Total Balance,Current,1-30 Days,31-60 Days,61-90 Days,90+ Days\n';
+              
+              filteredBalances.forEach(customer => {
+                csv += `${customer.customerCode},"${customer.customerName}",${customer.email},${customer.phone},`;
+                csv += `${customer.totalInvoiced},${customer.totalPaid},${customer.totalBalance},`;
+                csv += `${customer.current},${customer.days30},${customer.days60},${customer.days90},${customer.days90Plus}\n`;
+              });
+              
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `customer-balances-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              toast.success('Customer balances exported successfully!');
+            }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Export
+            Export CSV
           </button>
         </div>
       </div>

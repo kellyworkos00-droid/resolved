@@ -78,11 +78,39 @@ export default function FinancialAnalysisPage() {
             <option value="all">All Time</option>
           </select>
           <button
-            onClick={() => toast.success('Export feature coming soon!')}
+            onClick={() => {
+              if (!metrics) return;
+              
+              let csv = `Financial Analysis Report - ${period}\n\n`;
+              csv += 'Income Statement\n';
+              csv += 'Metric,Amount\n';
+              csv += `Total Revenue,${metrics.totalRevenue}\n`;
+              csv += `Total Expenses,${metrics.totalExpenses}\n`;
+              csv += `Net Profit,${metrics.netProfit}\n`;
+              csv += `Profit Margin,${metrics.profitMargin.toFixed(2)}%\n`;
+              csv += '\nBalance Sheet\n';
+              csv += `Total Assets,${metrics.assetsValue}\n`;
+              csv += `Total Liabilities,${metrics.liabilities}\n`;
+              csv += `Shareholders Equity,${metrics.equity}\n`;
+              csv += '\nKey Ratios\n';
+              csv += `Debt to Equity Ratio,${metrics.debtToEquityRatio.toFixed(2)}\n`;
+              csv += `Return on Assets,${metrics.returnOnAssets.toFixed(2)}%\n`;
+              csv += `Working Capital,${(metrics.assetsValue - metrics.liabilities)}\n`;
+              
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `financial-analysis-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              toast.success('Financial analysis exported successfully!');
+            }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
           >
             <Download className="w-4 h-4" />
-            Export
+            Export CSV
           </button>
         </div>
       </div>

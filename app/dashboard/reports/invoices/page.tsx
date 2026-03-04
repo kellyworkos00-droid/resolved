@@ -91,11 +91,42 @@ export default function InvoiceReportPage() {
             Refresh
           </button>
           <button
-            onClick={() => toast.success('Export feature coming soon!')}
+            onClick={() => {
+              let csv = 'Invoice Report\n\n';
+              if (dateFrom || dateTo) {
+                csv += `Period: ${dateFrom || 'All'} to ${dateTo || 'All'}\n`;
+              }
+              if (statusFilter) {
+                csv += `Status Filter: ${statusFilter}\n`;
+              }
+              csv += '\nInvoice Number,Customer,Customer Code,Issue Date,Due Date,Total Amount,Paid Amount,Balance Amount,Status\n';
+              
+              invoices.forEach(inv => {
+                csv += `${inv.invoiceNumber},"${inv.customer}",${inv.customerCode},`;
+                csv += `${new Date(inv.issueDate).toLocaleDateString()},${new Date(inv.dueDate).toLocaleDateString()},`;
+                csv += `${inv.totalAmount},${inv.paidAmount},${inv.balanceAmount},${inv.status}\n`;
+              });
+              
+              csv += `\nSummary:\n`;
+              csv += `Total Invoices,${invoices.length}\n`;
+              csv += `Total Invoiced,${getTotalInvoiced()}\n`;
+              csv += `Total Paid,${getTotalPaid()}\n`;
+              csv += `Total Outstanding,${getTotalOutstanding()}\n`;
+              
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `invoice-report-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              toast.success('Invoice report exported successfully!');
+            }}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 text-sm font-medium shadow-sm"
           >
             <Download className="w-4 h-4" />
-            Export PDF
+            Export CSV
           </button>
         </div>
       </div>

@@ -164,11 +164,50 @@ export default function ReportsPage() {
             Refresh
           </button>
           <button
-            onClick={() => toast.success('Export feature coming soon!')}
+            onClick={() => {
+              if (!overview || !aging) return;
+              
+              // Create CSV content
+              let csv = 'Financial Reports Summary\n\n';
+              csv += `Period: ${new Date(range.start).toLocaleDateString()} to ${new Date(range.end).toLocaleDateString()}\n\n`;
+              
+              csv += 'Performance Metrics\n';
+              csv += 'Metric,Amount\n';
+              csv += `Total Revenue,${formatCurrency(overview.revenue)}\n`;
+              csv += `Operating Expenses,${formatCurrency(overview.expenses)}\n`;
+              csv += `Supplier Payments,${formatCurrency(overview.supplierPayments)}\n`;
+              csv += `Net Income,${formatCurrency(overview.netIncome)}\n\n`;
+              
+              csv += 'Cashflow Analysis\n';
+              csv += `Cash In,${formatCurrency(overview.cashIn)}\n`;
+              csv += `Cash Out,${formatCurrency(overview.cashOut)}\n`;
+              csv += `Net Cashflow,${formatCurrency(overview.netCashflow)}\n\n`;
+              
+              csv += 'AR / AP\n';
+              csv += `Accounts Receivable,${formatCurrency(overview.arOutstanding)}\n`;
+              csv += `Accounts Payable,${formatCurrency(overview.apOutstanding)}\n\n`;
+              
+              csv += 'Aging Analysis\n';
+              csv += 'Aging Bucket,Accounts Receivable,Accounts Payable,Net Position\n';
+              agingRows.forEach(row => {
+                csv += `${row.label},${formatCurrency(row.ar)},${formatCurrency(row.ap)},${formatCurrency(row.ar - row.ap)}\n`;
+              });
+              
+              // Download CSV
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `financial-reports-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              toast.success('Report exported successfully!');
+            }}
             className="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
           >
             <Download className="w-4 h-4" />
-            Export
+            Export CSV
           </button>
         </div>
       </div>
