@@ -7,10 +7,15 @@ import toast from 'react-hot-toast';
 import {
   Download,
   Edit2,
+  Eye,
+  FileText,
+  Package,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Trash2,
+  TrendingUp,
   Upload,
   X,
 } from 'lucide-react';
@@ -38,6 +43,37 @@ interface PaginationState {
   totalPages: number;
 }
 
+interface StockMovement {
+  id: string;
+  quantity: number;
+  movementType: string;
+  referenceType: string | null;
+  referenceId: string | null;
+  notes: string | null;
+  createdAt: string;
+  createdByUser?: { name?: string | null };
+  location?: { name?: string | null };
+}
+
+interface ProductPerformance {
+  totalSold: number;
+  totalRevenue: number;
+  totalOrders: number;
+  avgQuantityPerOrder: number;
+  topBuyers: Array<{
+    customerName: string;
+    totalQuantity: number;
+    totalSpent: number;
+  }>;
+  salesTrend: Array<{
+    date: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  rank: number;
+  totalProducts: number;
+}
+
 const statusOptions = ['ALL', 'ACTIVE', 'OUT_OF_STOCK', 'DISCONTINUED', 'INACTIVE'];
 const stockManagedFromAdjustments = true;
 
@@ -55,6 +91,11 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('recent');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [productMovements, setProductMovements] = useState<StockMovement[]>([]);
+  const [productPerformance, setProductPerformance] = useState<ProductPerformance | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsTab, setDetailsTab] = useState<'info' | 'movements' | 'performance'>('info');
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
     limit: 20,
@@ -470,6 +511,118 @@ export default function ProductsPage() {
     setPreview(null);
     setShowForm(false);
     setEditingProduct(null);
+  };
+
+  const handleViewProduct = async (product: Product) => {
+    setViewingProduct(product);
+    setDetailsTab('info');
+    setLoadingDetails(true);
+
+    try {
+      const token = localStorage.getItem('token');
+
+      // Fetch movements and performance in parallel
+      const [movementsRes, performanceRes] = await Promise.all([
+        fetch(`/api/stock/movements?productId=${product.id}&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`/api/products/${product.id}/performance`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (movementsRes.ok) {
+        const movementsData = await movementsRes.json();
+        setProductMovements(movementsData.data.movements || []);
+      }
+
+      if (performanceRes.ok) {
+        const performanceData = await performanceRes.json();
+        setProductPerformance(performanceData.data);
+      }
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handlePrintMovement = () => {
+    if (!viewingProduct || productMovements.length === 0) {
+      toast.error('No movement data to print');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Please allow popups to print');
+      return;
+    }
+
+    const movementRows = productMovements
+      .map(
+        (m) => `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">${new Date(m.createdAt).toLocaleDateString()}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${m.movementType}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${m.quantity > 0 ? '+' : ''}${m.quantity}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${m.location?.name || '-'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${m.notes || '-'}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${m.createdByUser?.name || '-'}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Product Movement Report - ${viewingProduct.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { background-color: #f3f4f6; border: 1px solid #ddd; padding: 12px; text-align: left; }
+            td { border: 1px solid #ddd; padding: 8px; }
+            .header { margin-bottom: 20px; }
+            .product-info { background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+            @media print { button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Product Movement Report</h1>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+          <div class="product-info">
+            <h2>${viewingProduct.name}</h2>
+            <p><strong>SKU:</strong> ${viewingProduct.sku}</p>
+            <p><strong>Current Stock:</strong> ${viewingProduct.quantity} ${viewingProduct.unit}</p>
+            <p><strong>Category:</strong> ${viewingProduct.category || 'N/A'}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Location</th>
+                <th>Notes</th>
+                <th>Created By</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${movementRows}
+            </tbody>
+          </table>
+          <button onclick="window.print()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Print</button>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   const handleExport = () => {
@@ -1120,13 +1273,29 @@ export default function ProductsPage() {
                     </td>
                     <td className="text-right">
                       {stockManagedFromAdjustments ? (
-                        <Link href="/dashboard/stock-adjustments" className="btn-secondary inline-flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">
-                          <Plus size={14} />
-                          <span className="hidden sm:inline">Adjust Stock</span>
-                          <span className="sm:hidden">Adjust</span>
-                        </Link>
+                        <div className="flex justify-end gap-1 sm:gap-2">
+                          <button
+                            onClick={() => handleViewProduct(product)}
+                            className="btn-secondary flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2"
+                          >
+                            <Eye size={14} />
+                            <span className="hidden sm:inline">View</span>
+                          </button>
+                          <Link href="/dashboard/stock-adjustments" className="btn-secondary inline-flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2">
+                            <Plus size={14} />
+                            <span className="hidden sm:inline">Adjust Stock</span>
+                            <span className="sm:hidden">Adjust</span>
+                          </Link>
+                        </div>
                       ) : (
                         <div className="flex justify-end gap-1 sm:gap-2">
+                          <button
+                            onClick={() => handleViewProduct(product)}
+                            className="btn-secondary flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2"
+                          >
+                            <Eye size={14} />
+                            <span className="hidden sm:inline">View</span>
+                          </button>
                           <button
                             onClick={() => handleEdit(product)}
                             className="btn-secondary flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2"
@@ -1186,6 +1355,418 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Product Detail Modal */}
+      {viewingProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between z-10">
+              <h3 className="text-xl font-semibold text-gray-900">Product Details</h3>
+              <button
+                onClick={() => setViewingProduct(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-b bg-gray-50">
+              <div className="flex gap-1 p-2">
+                <button
+                  onClick={() => setDetailsTab('info')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                    detailsTab === 'info'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <FileText size={16} />
+                  <span>Details</span>
+                </button>
+                <button
+                  onClick={() => setDetailsTab('movements')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                    detailsTab === 'movements'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Package size={16} />
+                  <span>Movements</span>
+                </button>
+                <button
+                  onClick={() => setDetailsTab('performance')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                    detailsTab === 'performance'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <TrendingUp size={16} />
+                  <span>Performance</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Info Tab */}
+              {detailsTab === 'info' && (
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <div className="relative w-full lg:w-80 h-80 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                    {viewingProduct.imageUrl ? (
+                      <Image
+                        src={viewingProduct.imageUrl}
+                        alt={viewingProduct.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <Package size={64} className="text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900">{viewingProduct.name}</h2>
+                      <p className="text-sm text-gray-500 mt-1">SKU: {viewingProduct.sku}</p>
+                      <span
+                        className={`badge mt-2 ${
+                          viewingProduct.status === 'ACTIVE'
+                            ? 'badge-success'
+                            : viewingProduct.status === 'OUT_OF_STOCK'
+                            ? 'badge-warning'
+                            : 'badge-gray'
+                        }`}
+                      >
+                        {viewingProduct.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+
+                    {viewingProduct.description && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
+                        <p className="text-gray-600">{viewingProduct.description}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 mb-1">Selling Price</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {formatCurrency(viewingProduct.price)}
+                        </p>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 mb-1">Cost Price</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {viewingProduct.cost !== null
+                            ? formatCurrency(viewingProduct.cost)
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 mb-1">Current Stock</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {viewingProduct.quantity} {viewingProduct.unit}
+                        </p>
+                      </div>
+                      <div className="bg-orange-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 mb-1">Reorder Level</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {viewingProduct.reorderLevel}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                      <div>
+                        <p className="text-sm text-gray-600">Category</p>
+                        <p className="font-semibold text-gray-900">
+                          {viewingProduct.category || 'Uncategorized'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Inventory Value</p>
+                        <p className="font-semibold text-gray-900">
+                          {formatCurrency(getInventoryValue(viewingProduct))}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Unit</p>
+                        <p className="font-semibold text-gray-900">{viewingProduct.unit}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Created</p>
+                        <p className="font-semibold text-gray-900">
+                          {viewingProduct.createdAt
+                            ? new Date(viewingProduct.createdAt).toLocaleDateString()
+                            : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={() => {
+                          handleEdit(viewingProduct);
+                          setViewingProduct(null);
+                        }}
+                        className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                      >
+                        <Edit2 size={18} />
+                        Edit Product
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleDelete(viewingProduct);
+                          setViewingProduct(null);
+                        }}
+                        className="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={18} />
+                        Delete Product
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Movements Tab */}
+              {detailsTab === 'movements' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Stock Movement History</h3>
+                    <button
+                      onClick={handlePrintMovement}
+                      className="btn-secondary flex items-center gap-2"
+                      disabled={productMovements.length === 0}
+                    >
+                      <Printer size={16} />
+                      Print Movement
+                    </button>
+                  </div>
+
+                  {loadingDetails ? (
+                    <div className="text-center py-12">
+                      <RefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                      <p className="text-gray-500">Loading movements...</p>
+                    </div>
+                  ) : productMovements.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <Package size={48} className="mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-600">No movement history available</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="table w-full">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Location</th>
+                            <th>Notes</th>
+                            <th>Created By</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {productMovements.map((movement) => (
+                            <tr key={movement.id}>
+                              <td className="text-sm">
+                                {new Date(movement.createdAt).toLocaleString()}
+                              </td>
+                              <td>
+                                <span className="badge badge-info text-xs">
+                                  {movement.movementType}
+                                </span>
+                              </td>
+                              <td>
+                                <span
+                                  className={`font-semibold ${
+                                    movement.quantity > 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}
+                                >
+                                  {movement.quantity > 0 ? '+' : ''}
+                                  {movement.quantity}
+                                </span>
+                              </td>
+                              <td className="text-sm text-gray-600">
+                                {movement.location?.name || '-'}
+                              </td>
+                              <td className="text-sm text-gray-600">
+                                {movement.notes || '-'}
+                              </td>
+                              <td className="text-sm text-gray-600">
+                                {movement.createdByUser?.name || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Performance Tab */}
+              {detailsTab === 'performance' && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Sales Performance & Analytics
+                  </h3>
+
+                  {loadingDetails ? (
+                    <div className="text-center py-12">
+                      <RefreshCw className="animate-spin mx-auto mb-2" size={24} />
+                      <p className="text-gray-500">Loading performance data...</p>
+                    </div>
+                  ) : !productPerformance ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <TrendingUp size={48} className="mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-600">No performance data available</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Performance Metrics */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-600 mb-1">Total Sold</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {productPerformance.totalSold}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {formatCurrency(productPerformance.totalRevenue)}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-600 mb-1">Total Orders</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {productPerformance.totalOrders}
+                          </p>
+                        </div>
+                        <div className="bg-orange-50 rounded-lg p-4">
+                          <p className="text-sm text-gray-600 mb-1">Avg per Order</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {productPerformance.avgQuantityPerOrder.toFixed(1)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Product Rank */}
+                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 border border-orange-200">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-yellow-400 rounded-full w-16 h-16 flex items-center justify-center">
+                            <span className="text-2xl font-bold text-white">
+                              #{productPerformance.rank}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Product Ranking</p>
+                            <p className="text-xl font-bold text-gray-900">
+                              Top {productPerformance.rank} of {productPerformance.totalProducts}{' '}
+                              Products
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Based on total sales performance
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top Buyers */}
+                      {productPerformance.topBuyers.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3">Top Buyers</h4>
+                          <div className="overflow-x-auto">
+                            <table className="table w-full">
+                              <thead>
+                                <tr>
+                                  <th className="text-left">Rank</th>
+                                  <th className="text-left">Customer</th>
+                                  <th className="text-right">Quantity Purchased</th>
+                                  <th className="text-right">Total Spent</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {productPerformance.topBuyers.map((buyer, index) => (
+                                  <tr key={index}>
+                                    <td>
+                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 font-bold text-sm">
+                                        {index + 1}
+                                      </div>
+                                    </td>
+                                    <td className="font-semibold text-gray-900">
+                                      {buyer.customerName}
+                                    </td>
+                                    <td className="text-right font-semibold text-blue-600">
+                                      {buyer.totalQuantity} units
+                                    </td>
+                                    <td className="text-right font-semibold text-green-600">
+                                      {formatCurrency(buyer.totalSpent)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sales Trend (if available) */}
+                      {productPerformance.salesTrend.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3">Recent Sales Trend</h4>
+                          <div className="overflow-x-auto">
+                            <table className="table w-full">
+                              <thead>
+                                <tr>
+                                  <th className="text-left">Date</th>
+                                  <th className="text-right">Quantity Sold</th>
+                                  <th className="text-right">Revenue</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {productPerformance.salesTrend.map((trend, index) => (
+                                  <tr key={index}>
+                                    <td className="text-sm">
+                                      {new Date(trend.date).toLocaleDateString()}
+                                    </td>
+                                    <td className="text-right font-semibold text-blue-600">
+                                      {trend.quantity}
+                                    </td>
+                                    <td className="text-right font-semibold text-green-600">
+                                      {formatCurrency(trend.revenue)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t p-4 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setViewingProduct(null)}
+                className="btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
