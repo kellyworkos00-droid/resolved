@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         managerId: manager.id,
         managerName: `${manager.firstName} ${manager.lastName}`,
-        subordinates: manager.managerOf.map((rel: { employee: { id: string; firstName: string; lastName: string; email: string; position: string } }) => ({
+        subordinates: manager.managerOf.map((rel: { employee: { id: string; firstName: string; lastName: string; email: string; position: string; department: string } }) => ({
           id: rel.employee.id,
           firstName: rel.employee.firstName,
           lastName: rel.employee.lastName,
