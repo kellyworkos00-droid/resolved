@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { verifyAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = verifyToken(request);
+    const payload = await verifyAuth(request);
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = verifyToken(request);
+    const payload = await verifyAuth(request);
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         notes,
         totalDebit,
         totalCredit,
-        createdBy: payload.id,
+        createdBy: payload.userId,
         organizationId: 'default',
         lines: {
           create: lines.map((line: { accountId: string; description?: string; debitAmount?: number; creditAmount?: number }, index: number) => ({

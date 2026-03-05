@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
-import { verifyToken } from '@/lib/auth';
+import { verifyAuth } from '@/lib/auth';
 
 /**
  * GET /api/whatsapp-commerce/stats
@@ -9,18 +9,10 @@ import { verifyToken } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        createErrorResponse('Unauthorized', 'UNAUTHORIZED'),
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyToken(token);
+    const payload = await verifyAuth(request);
     if (!payload) {
       return NextResponse.json(
-        createErrorResponse('Invalid token', 'INVALID_TOKEN'),
+        createErrorResponse('Unauthorized', 'UNAUTHORIZED'),
         { status: 401 }
       );
     }
@@ -44,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Get last sync status
     const settings = await prisma.whatsAppCommerceSettings.findFirst({
-      where: { organizationId: payload.organizationId },
+      where: { organizationId: payload.organizationId || 'default' },
     });
 
     const stats = {

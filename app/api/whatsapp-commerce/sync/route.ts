@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
-import { verifyToken } from '@/lib/auth';
+import { verifyAuth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 /**
@@ -9,25 +9,17 @@ import prisma from '@/lib/prisma';
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    const payload = await verifyAuth(request);
+    if (!payload) {
       return NextResponse.json(
         createErrorResponse('Unauthorized', 'UNAUTHORIZED'),
         { status: 401 }
       );
     }
 
-    const payload = verifyToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        createErrorResponse('Invalid token', 'INVALID_TOKEN'),
-        { status: 401 }
-      );
-    }
-
     // Get integration settings
     const settings = await prisma.whatsAppCommerceSettings.findFirst({
-      where: { organizationId: payload.organizationId },
+      where: { organizationId: payload.organizationId || 'default' },
     });
 
     if (!settings || !settings.isConnected) {

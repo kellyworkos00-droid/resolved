@@ -412,7 +412,7 @@ export default function WhatsAppCommerceSetupPage() {
           <li>• <strong>Webhook URL:</strong> Point to your Kelly OS domain for receiving WhatsApp events</li>
           <li>• <strong>WooCommerce:</strong> Get API keys from WooCommerce → Settings → Advanced → REST API</li>
           <li>• <strong>Shopify:</strong> Create a custom app in Shopify Admin to get API credentials</li>
-          <li>• <strong>Testing:</strong> Use the "Test Connection" button to verify your integration settings</li>
+          <li>• <strong>Testing:</strong> Use the &quot;Test Connection&quot; button to verify your integration settings</li>
         </ul>
       </div>
     </div>

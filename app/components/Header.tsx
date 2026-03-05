@@ -39,6 +39,9 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-2">
+            <Link href="/control" className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 transition-colors">
+              Control
+            </Link>
             <Link href="/dashboard" className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 transition-colors">
               Dashboard
             </Link>
@@ -70,6 +73,9 @@ export default function Header() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2 bg-white/50 dark:bg-gray-800/50 rounded-lg mt-2">
+            <Link href="/control" className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors">
+              Control
+            </Link>
             <Link href="/dashboard" className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors">
               Dashboard
             </Link>

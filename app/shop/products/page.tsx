@@ -27,7 +27,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [page, selectedCategory]);
+  }, [page, selectedCategory, fetchProducts]);
 
   const fetchProducts = async () => {
     try {

@@ -161,7 +161,7 @@ async function notifyUsersForAlert(
           },
         },
       });
-      targetUserIds = users.map((u) => u.id);
+      targetUserIds = users.map((u: any) => u.id);
     } else {
       // Alert all users with appropriate roles
       const users = await prisma.user.findMany({
@@ -170,7 +170,7 @@ async function notifyUsersForAlert(
           isActive: true,
         },
       });
-      targetUserIds = users.map((u) => u.id);
+      targetUserIds = users.map((u: any) => u.id);
     }
 
     // Create notifications for each user

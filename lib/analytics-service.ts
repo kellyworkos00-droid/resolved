@@ -178,7 +178,7 @@ export async function generateCashFlowForecast(
       });
 
       const inflows = payments.reduce(
-        (sum, p) => sum.plus(new Decimal(String(p.amount))),
+        (sum: Decimal, p: any) => sum.plus(new Decimal(String(p.amount))),
         new Decimal(0)
       );
 
@@ -193,7 +193,7 @@ export async function generateCashFlowForecast(
       });
 
       const outflows = supplierPayments.reduce(
-        (sum, p) => sum.plus(new Decimal(String(p.amount))),
+        (sum: Decimal, p: any) => sum.plus(new Decimal(String(p.amount))),
         new Decimal(0)
       );
 
@@ -368,7 +368,7 @@ async function getTotalAssets(): Promise<Decimal> {
   });
 
   return accounts.reduce(
-    (sum, account) => sum.plus(new Decimal(String(account.currentBalance || 0))),
+    (sum: Decimal, account: any) => sum.plus(new Decimal(String(account.currentBalance || 0))),
     new Decimal(0)
   );
 }
@@ -381,7 +381,7 @@ async function getTotalLiabilities(): Promise<Decimal> {
   });
 
   return accounts.reduce(
-    (sum, account) => sum.plus(new Decimal(String(account.currentBalance || 0))),
+    (sum: Decimal, account: any) => sum.plus(new Decimal(String(account.currentBalance || 0))),
     new Decimal(0)
   );
 }
@@ -394,7 +394,7 @@ async function getTotalEquity(): Promise<Decimal> {
   });
 
   return accounts.reduce(
-    (sum, account) => sum.plus(new Decimal(String(account.currentBalance || 0))),
+    (sum: Decimal, account: any) => sum.plus(new Decimal(String(account.currentBalance || 0))),
     new Decimal(0)
   );
 }
@@ -407,7 +407,7 @@ async function getTotalRevenue(): Promise<Decimal> {
   });
 
   return accounts.reduce(
-    (sum, account) => sum.plus(new Decimal(String(account.currentBalance || 0))),
+    (sum: Decimal, account: any) => sum.plus(new Decimal(String(account.currentBalance || 0))),
     new Decimal(0)
   );
 }
@@ -420,7 +420,7 @@ async function getTotalExpenses(): Promise<Decimal> {
   });
 
   return accounts.reduce(
-    (sum, account) => sum.plus(new Decimal(String(account.currentBalance || 0))),
+    (sum: Decimal, account: any) => sum.plus(new Decimal(String(account.currentBalance || 0))),
     new Decimal(0)
   );
 }

@@ -64,9 +64,9 @@ export async function GET(
     });
 
     // Calculate basic metrics
-    const totalSold = orderItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalRevenue = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    const totalOrders = new Set(orderItems.map((item) => item.posOrderId)).size;
+    const totalSold = orderItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    const totalRevenue = orderItems.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
+    const totalOrders = new Set(orderItems.map((item: any) => item.posOrderId)).size;
     const avgQuantityPerOrder = totalOrders > 0 ? totalSold / totalOrders : 0;
 
     // Calculate top buyers
@@ -75,7 +75,7 @@ export async function GET(
       { customerName: string; totalQuantity: number; totalSpent: number }
     >();
 
-    orderItems.forEach((item) => {
+    orderItems.forEach((item: any) => {
       const customerName = item.posOrder.customer?.name || 'Walk-in Customer';
       const existing = buyerMap.get(customerName) || {
         customerName,
@@ -96,12 +96,12 @@ export async function GET(
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const recentOrderItems = orderItems.filter(
-      (item) => new Date(item.createdAt) >= thirtyDaysAgo
+      (item: any) => new Date(item.createdAt) >= thirtyDaysAgo
     );
 
     // Group by date
     const salesByDate = new Map<string, { quantity: number; revenue: number }>();
-    recentOrderItems.forEach((item) => {
+    recentOrderItems.forEach((item: any) => {
       const dateKey = new Date(item.createdAt).toISOString().split('T')[0];
       const existing = salesByDate.get(dateKey) || { quantity: 0, revenue: 0 };
       existing.quantity += item.quantity;
@@ -139,7 +139,7 @@ export async function GET(
         },
       });
 
-      const revenue = items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const revenue = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
       productRevenueMap.set(p.id, revenue);
     }
 

@@ -31,7 +31,7 @@ export default function ProductDetailPage() {
     if (params.id) {
       fetchProduct(params.id as string);
     }
-  }, [params.id]);
+  }, [params.id, fetchProduct]);
 
   const fetchProduct = async (id: string) => {
     try {

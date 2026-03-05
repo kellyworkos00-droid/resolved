@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     // Calculate totals and validate stock
     let subtotal = new Decimal(0);
     for (const item of items) {
-      const product = products.find((p) => p.id === item.productId);
+      const product = products.find((p: any) => p.id === item.productId);
       if (!product) {
         return NextResponse.json(
           createErrorResponse('Product not found', 'NOT_FOUND'),
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
         createdBy: payload.userId,
         orderItems: {
           create: items.map((item) => {
-            const product = products.find((p) => p.id === item.productId);
+            const product = products.find((p: any) => p.id === item.productId);
             if (!product) {
               throw new Error('Product not found');
             }

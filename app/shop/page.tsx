@@ -162,7 +162,7 @@ export default function ShopHomePage() {
                 <Phone className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-semibold text-lg mb-2">24/7 Support</h3>
-              <p className="text-gray-600 text-sm">We're always here to help you</p>
+              <p className="text-gray-600 text-sm">We&apos;re always here to help you</p>
             </div>
           </div>
         </div>

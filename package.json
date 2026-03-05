@@ -50,7 +50,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/chart.js": "^2.9.41",
     "@types/jsonwebtoken": "^9.0.5",
-    "@types/jspdf": "~2.x",
+    "@types/jspdf": "^2.0.0",
     "@types/node": "^20.11.5",
     "@types/nodemailer": "^6.4.14",
     "@types/papaparse": "^5.3.14",
