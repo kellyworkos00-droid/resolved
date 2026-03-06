@@ -5,14 +5,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
+    "build:full": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts",
-    "export-test": "tsx scripts/test-export.ts"
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:studio": "npx prisma studio",
+    "prisma:seed": "npx tsx prisma/seed.ts",
+    "export-test": "npx tsx scripts/test-export.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

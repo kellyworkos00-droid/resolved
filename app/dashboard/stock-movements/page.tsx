@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowUpCircle, ArrowDownCircle, Package, Filter, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Product {
   id: string;
@@ -158,7 +159,7 @@ export default function StockMovementsPage() {
             let csv = 'Stock Movements Report\\n\\n';
             csv += 'Movement Type,Product,SKU,Warehouse,Location,Quantity,Date,Created By,Reference,Notes\\n';
             
-            movements.forEach(movement => {
+            movements.forEach((movement: StockMovement) => {
               const userName = `${movement.createdByUser.firstName} ${movement.createdByUser.lastName}`.trim();
               csv += `${getMovementTypeLabel(movement.movementType)},`;
               csv += `"${movement.product.name}",${movement.product.sku},`;
