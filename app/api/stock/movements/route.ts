@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requirePermission } from '@/lib/authorization';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
@@ -18,7 +17,16 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const limit = parseInt(searchParams.get('limit') || '100');
 
-    const where: Prisma.StockMovementWhereInput = {};
+    const where: {
+      productId?: string;
+      locationId?: string;
+      warehouseId?: string;
+      movementType?: string;
+      createdAt?: {
+        gte?: Date;
+        lte?: Date;
+      };
+    } = {};
 
     if (productId) where.productId = productId;
     if (locationId) where.locationId = locationId;

@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import type { Prisma } from '@prisma/client';
 import { verifyAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { successResponse, errorResponse } from '@/lib/response';
@@ -93,7 +92,19 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { name, description, columns, filters } = body;
 
     // Validation
-    const updateData: Prisma.ReportTemplateUpdateInput = {};
+    type JsonInputValue =
+      | string
+      | number
+      | boolean
+      | { [key: string]: JsonInputValue | null }
+      | Array<JsonInputValue | null>;
+
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      columns?: string[];
+      filters?: JsonInputValue;
+    } = {};
 
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim().length === 0) {

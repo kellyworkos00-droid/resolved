@@ -5,7 +5,6 @@ import { adjustStockLevel } from '@/lib/stock';
 import { createAuditLog, getClientIp, getUserAgent } from '@/lib/audit';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
 import type { TransactionClient } from '@/lib/types';
-import type { Prisma } from '@prisma/client';
 import type { AuditAction } from '@/lib/audit';
 
 interface RouteParams {
@@ -85,7 +84,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         return null;
       }
 
-      const updateData: Prisma.ProductReturnUpdateInput = { updatedAt: new Date() };
+      const updateData: {
+        updatedAt: Date;
+        status?: 'APPROVED' | 'PROCESSING' | 'COMPLETED' | 'REJECTED';
+        approvedDate?: Date;
+        approvedBy?: string;
+        completedDate?: Date;
+      } = { updatedAt: new Date() };
 
       switch (action) {
         case 'APPROVE':

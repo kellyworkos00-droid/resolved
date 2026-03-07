@@ -385,7 +385,14 @@ export default function HRDashboard() {
           </div>
           <div className="space-y-3">
             {goals.length > 0 ? (
-              goals.slice(0, 5).map((goal: { id: string; title: string; employee?: { firstName: string; lastName: string } }) => (
+              goals.slice(0, 5).map((goal: {
+                id: string;
+                title: string;
+                dueDate: string | Date;
+                priority: string;
+                progressPercent: number;
+                employee?: { firstName: string; lastName: string };
+              }) => (
                 <Card key={goal.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">

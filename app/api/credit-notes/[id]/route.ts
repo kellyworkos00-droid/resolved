@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { updateCreditNoteSchema } from '@/lib/validations';
 import { verifyAuth } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit';
-import type { Prisma } from '@prisma/client';
+import type { TransactionClient } from '@/lib/types';
 import { z } from 'zod';
 
 // GET /api/credit-notes/[id] - Get credit note details
@@ -165,7 +165,7 @@ export async function PATCH(
       }
 
       // Update credit note and invoice in transaction
-      updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      updated = await prisma.$transaction(async (tx: TransactionClient) => {
         // Get invoice
         const invoice = await tx.invoice.findUnique({
           where: { id: invoiceId },

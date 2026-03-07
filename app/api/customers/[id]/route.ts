@@ -43,7 +43,7 @@ export async function GET(
 
     // Get current (unpaid/pending) invoices
     const currentInvoices = allInvoices.filter(
-      (inv) => inv.status !== 'PAID' && inv.status !== 'CANCELLED'
+      (inv: { status: string }) => inv.status !== 'PAID' && inv.status !== 'CANCELLED'
     );
 
     return NextResponse.json(

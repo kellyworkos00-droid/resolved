@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/authorization';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
 import prisma from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
 
 /**
  * GET /api/reconciliation/dashboard
@@ -83,16 +82,14 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    type TopCustomerGroup = Prisma.PaymentGroupByOutputType;
-
     // Get customer details for top customers
-    const topCustomerIds = (topCustomers as TopCustomerGroup[]).map((c) => c.customerId);
+    const topCustomerIds = topCustomers.map((c) => c.customerId);
     const customerDetails = await prisma.customer.findMany({
       where: { id: { in: topCustomerIds } },
       select: { id: true, name: true, customerCode: true },
     });
 
-    const topCustomersWithDetails = (topCustomers as TopCustomerGroup[]).map((tc) => {
+    const topCustomersWithDetails = topCustomers.map((tc) => {
       const customer = customerDetails.find((c) => c.id === tc.customerId);
       return {
         customer,

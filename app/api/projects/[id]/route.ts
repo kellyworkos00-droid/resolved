@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
 import { requireRoles } from '@/lib/authorization';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
 import prisma from '@/lib/prisma';
@@ -118,7 +117,7 @@ export async function PUT(
       );
     }
 
-    const updateData: Prisma.ProjectUpdateInput = { ...parsed.data };
+    const updateData = { ...parsed.data };
 
     const project = await prisma.project.update({
       where: { id: params.id },

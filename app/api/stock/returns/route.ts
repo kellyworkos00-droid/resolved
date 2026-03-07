@@ -5,7 +5,6 @@ import { createProductReturnSchema } from '@/lib/validations';
 import { createAuditLog, getClientIp, getUserAgent } from '@/lib/audit';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
 import type { TransactionClient } from '@/lib/types';
-import type { Prisma } from '@prisma/client';
 
 function buildReturnNumber(): string {
   const timestamp = Date.now();
@@ -26,7 +25,12 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get('customerId');
     const supplierId = searchParams.get('supplierId');
 
-    const where: Prisma.ProductReturnWhereInput = {};
+    const where: {
+      returnType?: string;
+      status?: string;
+      customerId?: string;
+      supplierId?: string;
+    } = {};
     if (returnType) where.returnType = returnType;
     if (status) where.status = status;
     if (customerId) where.customerId = customerId;

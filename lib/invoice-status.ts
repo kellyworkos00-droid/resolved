@@ -4,13 +4,7 @@
  */
 
 import prisma from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
 import { calculateInvoiceStatus, InvoiceStatus, isInvoiceNotPaid } from '@/lib/payment-methods';
-
-type InvoiceWithPayments = Prisma.InvoiceGetPayload<{ include: { payments: true } }>;
-type InvoiceWithCustomerAndPayments = Prisma.InvoiceGetPayload<{
-  include: { customer: true; payments: true };
-}>;
 
 /**
  * Calculate and update invoice status based on actual payments
@@ -109,7 +103,7 @@ export async function getCustomerInvoicesWithAccurateStatus(customerId: string) 
     orderBy: { issueDate: 'desc' },
   });
 
-  return invoices.map((invoice: InvoiceWithPayments) => {
+  return invoices.map((invoice) => {
     const actualPaidAmount = invoice.payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
     const actualStatus = calculateInvoiceStatus(
       invoice.totalAmount,
@@ -150,7 +144,7 @@ export async function getUnpaidInvoices(customerId?: string) {
   });
 
   return invoices
-    .map((invoice: InvoiceWithCustomerAndPayments) => {
+    .map((invoice) => {
       const actualPaidAmount = invoice.payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
       const actualStatus = calculateInvoiceStatus(
         invoice.totalAmount,
@@ -215,7 +209,7 @@ export async function recalculateCustomerInvoices(customerId: string) {
     },
   });
 
-  const updates = invoices.map(async (invoice: InvoiceWithPayments) => {
+  const updates = invoices.map(async (invoice) => {
     const actualPaidAmount = invoice.payments.reduce((sum: number, p: { amount: number }) => sum + p.amount, 0);
     const newStatus = calculateInvoiceStatus(
       invoice.totalAmount,

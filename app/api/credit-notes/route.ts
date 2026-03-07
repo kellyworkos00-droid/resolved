@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth';
 import { createCreditNoteSchema } from '@/lib/validations';
 import { createAuditLog } from '@/lib/audit';
+import type { TransactionClient } from '@/lib/types';
 import { z } from 'zod';
 
 // GET /api/credit-notes - List credit notes with filters
@@ -21,7 +21,12 @@ export async function GET(request: NextRequest) {
     const creditNoteType = searchParams.get('creditNoteType');
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
 
-    const where: Prisma.CreditNoteWhereInput = {};
+    const where: {
+      customerId?: string;
+      invoiceId?: string;
+      status?: string;
+      creditNoteType?: string;
+    } = {};
     if (customerId) where.customerId = customerId;
     if (invoiceId) where.invoiceId = invoiceId;
     if (status) where.status = status;
@@ -74,16 +79,23 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate summary
+    type CreditNoteSummaryItem = {
+      status: string;
+      totalAmount: number;
+      appliedAmount: number;
+      remainingAmount: number;
+    };
+
     const summary = {
       total: creditNotes.length,
-      draft: creditNotes.filter((cn) => cn.status === 'DRAFT').length,
-      pending: creditNotes.filter((cn) => cn.status === 'PENDING').length,
-      approved: creditNotes.filter((cn) => cn.status === 'APPROVED').length,
-      applied: creditNotes.filter((cn) => cn.status === 'APPLIED').length,
-      cancelled: creditNotes.filter((cn) => cn.status === 'CANCELLED').length,
-      totalAmount: creditNotes.reduce((sum, cn) => sum + cn.totalAmount, 0),
-      totalApplied: creditNotes.reduce((sum, cn) => sum + cn.appliedAmount, 0),
-      totalRemaining: creditNotes.reduce((sum, cn) => sum + cn.remainingAmount, 0),
+      draft: creditNotes.filter((cn: CreditNoteSummaryItem) => cn.status === 'DRAFT').length,
+      pending: creditNotes.filter((cn: CreditNoteSummaryItem) => cn.status === 'PENDING').length,
+      approved: creditNotes.filter((cn: CreditNoteSummaryItem) => cn.status === 'APPROVED').length,
+      applied: creditNotes.filter((cn: CreditNoteSummaryItem) => cn.status === 'APPLIED').length,
+      cancelled: creditNotes.filter((cn: CreditNoteSummaryItem) => cn.status === 'CANCELLED').length,
+      totalAmount: creditNotes.reduce((sum: number, cn: CreditNoteSummaryItem) => sum + cn.totalAmount, 0),
+      totalApplied: creditNotes.reduce((sum: number, cn: CreditNoteSummaryItem) => sum + cn.appliedAmount, 0),
+      totalRemaining: creditNotes.reduce((sum: number, cn: CreditNoteSummaryItem) => sum + cn.remainingAmount, 0),
     };
 
     return NextResponse.json({
@@ -135,7 +147,7 @@ export async function POST(request: NextRequest) {
     const totalAmount = subtotal + taxAmount;
 
     // Create credit note with items in a transaction
-    const creditNote = await prisma.$transaction(async (tx) => {
+    const creditNote = await prisma.$transaction(async (tx: TransactionClient) => {
       // Generate unique credit note number
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 6).toUpperCase();
