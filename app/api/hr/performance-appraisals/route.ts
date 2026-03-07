@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       employeeId,
-      managerId,
       appraisalDate,
       reviewPeriodStart,
       reviewPeriodEnd,
@@ -61,34 +60,37 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation
-    if (!employeeId || !managerId || !appraisalDate) {
+    if (!employeeId || !appraisalDate) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    const appraisalDateValue = new Date(appraisalDate);
+    const appraisalYear = appraisalDateValue.getFullYear();
+
     const appraisal = await prisma.performanceAppraisal.create({
       data: {
         employeeId,
-        managerId,
-        appraisalType: "ANNUAL",
-        appraisalDate: new Date(appraisalDate),
-        reviewPeriodStart: new Date(reviewPeriodStart),
-        reviewPeriodEnd: new Date(reviewPeriodEnd),
+        appraisalPeriod: "ANNUAL",
+        appraisalYear,
         status: "DRAFT",
         selfRating: selfRating || 0,
-        selfComment,
+        selfComments: selfComment,
         managerRating: managerRating || 0,
-        managerComment,
+        managerComments: managerComment,
+        managerReviewDate:
+          managerRating !== undefined || managerComment ? new Date() : undefined,
+        closedDate: reviewPeriodEnd ? new Date(reviewPeriodEnd) : undefined,
+        competencies: reviewPeriodStart
+          ? { reviewPeriodStart: new Date(reviewPeriodStart).toISOString() }
+          : undefined,
         goals: goals || [],
       },
       include: {
         employee: {
           select: { firstName: true, lastName: true, email: true },
-        },
-        manager: {
-          select: { firstName: true, lastName: true },
         },
       },
     });
@@ -120,14 +122,17 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         ...(selfRating !== undefined && { selfRating }),
-        ...(selfComment && { selfComment }),
+        ...(selfComment && { selfComments: selfComment }),
         ...(managerRating !== undefined && { managerRating }),
-        ...(managerComment && { managerComment }),
+        ...(managerComment && { managerComments: managerComment }),
+        ...((managerRating !== undefined || managerComment) && {
+          managerReviewDate: new Date(),
+        }),
         ...(status && { status }),
       },
       include: {
         employee: { select: { firstName: true, lastName: true } },
-        peerReviews: { select: { id: true, overallScore: true } },
+        peerReviews: { select: { id: true, rating: true } },
       },
     });
 
