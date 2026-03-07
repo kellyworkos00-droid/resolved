@@ -75,7 +75,7 @@ export async function GET(
       { customerName: string; totalQuantity: number; totalSpent: number }
     >();
 
-    orderItems.forEach((item: { quantity: number; totalPrice: number; posOrder: { customer?: { name: string } } }) => {
+    orderItems.forEach((item) => {
       const customerName = item.posOrder.customer?.name || 'Walk-in Customer';
       const existing = buyerMap.get(customerName) || {
         customerName,
