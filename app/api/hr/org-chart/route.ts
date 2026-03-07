@@ -40,13 +40,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         managerId: manager.id,
         managerName: `${manager.firstName} ${manager.lastName}`,
-        subordinates: manager.managerOf.map((rel: { employee: { id: string; firstName: string; lastName: string; email: string; position: string; department: string } }) => ({
+        subordinates: manager.managerOf.map((rel) => ({
           id: rel.employee.id,
           firstName: rel.employee.firstName,
           lastName: rel.employee.lastName,
           email: rel.employee.email,
           position: rel.employee.position,
-          department: rel.employee.department,
+          department: rel.employee.department?.name || null,
         })),
       });
     }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
               lastName: managerRel.manager.lastName,
               email: managerRel.manager.email,
               position: managerRel.manager.position,
-              department: managerRel.manager.department,
+              department: managerRel.manager.department?.name || null,
             }
           : null,
       });
