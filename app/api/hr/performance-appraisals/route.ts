@@ -20,9 +20,6 @@ export async function GET(request: NextRequest) {
         employee: {
           select: { id: true, firstName: true, lastName: true, email: true },
         },
-        manager: {
-          select: { id: true, firstName: true, lastName: true },
-        },
         peerReviews: {
           select: {
             id: true,
