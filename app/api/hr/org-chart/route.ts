@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     const relation = await prisma.employeeManager.create({
       data: {
         managerId,
-        subordinateId,
+        employeeId: subordinateId,
       },
       include: {
         manager: { select: { firstName: true, lastName: true } },
