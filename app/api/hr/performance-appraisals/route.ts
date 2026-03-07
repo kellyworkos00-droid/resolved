@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             reviewer: { select: { firstName: true, lastName: true } },
-            overallScore: true,
+            rating: true,
           },
         },
       },
