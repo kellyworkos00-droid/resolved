@@ -16,13 +16,104 @@ import {
   Clock,
 } from "lucide-react";
 
+type EmployeeSummary = {
+  firstName?: string;
+  lastName?: string;
+};
+
+type AppraisalItem = {
+  id: string;
+  employee?: EmployeeSummary;
+  appraisalType?: string;
+  appraisalDate?: string | Date;
+  selfRating?: number;
+  managerRating?: number;
+  status?: string;
+};
+
+type TrainingItem = {
+  id: string;
+  title?: string;
+  category?: string;
+  status?: string;
+  completionPercent?: number;
+  program?: { title?: string };
+};
+
+type AttendanceItem = {
+  id: string;
+  employee?: EmployeeSummary;
+  date?: string | Date;
+  status?: string;
+  checkIn?: string | Date;
+  hoursWorked?: number;
+  locationData?: { checkInLocation?: string };
+};
+
+type GoalItem = {
+  id: string;
+  title: string;
+  dueDate?: string | Date;
+  priority?: string;
+  progressPercent?: number;
+  status?: string;
+  employee?: EmployeeSummary;
+};
+
+type Metrics = {
+  totalEmployees: number;
+  activeGoals: number;
+  completedTrainings: number;
+  avgAttendance: number;
+};
+
+function extractArray<T>(payload: unknown, key?: string): T[] {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (payload && typeof payload === "object") {
+    const obj = payload as Record<string, unknown>;
+
+    if (key && Array.isArray(obj[key])) {
+      return obj[key] as T[];
+    }
+
+    if (Array.isArray(obj.data)) {
+      return obj.data as T[];
+    }
+  }
+
+  return [];
+}
+
+function toValidNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function toOptionalNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function formatDate(value: string | Date | undefined): string {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleDateString();
+}
+
+function formatTime(value: string | Date | undefined): string {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleTimeString();
+}
+
 export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [appraisals, setAppraisals] = useState([]);
-  const [trainings, setTrainings] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [goals, setGoals] = useState([]);
-  const [metrics, setMetrics] = useState({
+  const [appraisals, setAppraisals] = useState<AppraisalItem[]>([]);
+  const [trainings, setTrainings] = useState<TrainingItem[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceItem[]>([]);
+  const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [metrics, setMetrics] = useState<Metrics>({
     totalEmployees: 0,
     activeGoals: 0,
     completedTrainings: 0,
@@ -49,23 +140,47 @@ export default function HRDashboard() {
         goalsRes.json(),
       ]);
 
-      setAppraisals(appraisalsData || []);
-      setTrainings(trainingsData || []);
-      setAttendance(attendanceData || []);
-      setGoals(goalsData.goals || []);
+      const appraisalItems = extractArray<AppraisalItem>(appraisalsData);
+      const trainingItemsRaw = extractArray<Record<string, unknown>>(trainingsData);
+      const attendanceItems = extractArray<AttendanceItem>(attendanceData);
+      const goalItems = extractArray<GoalItem>(goalsData, "goals");
+
+      const trainingItems: TrainingItem[] = trainingItemsRaw.map((item) => ({
+        id: String(item.id ?? ""),
+        title:
+          typeof item.title === "string"
+            ? item.title
+            : typeof item.name === "string"
+              ? item.name
+              : undefined,
+        category: typeof item.category === "string" ? item.category : undefined,
+        status: typeof item.status === "string" ? item.status : undefined,
+        completionPercent: toOptionalNumber(item.completionPercent),
+        program:
+          item.program && typeof item.program === "object"
+            ? { title: (item.program as { title?: string }).title }
+            : undefined,
+      }));
+
+      setAppraisals(appraisalItems);
+      setTrainings(trainingItems);
+      setAttendance(attendanceItems);
+      setGoals(goalItems);
 
       // Calculate metrics
-      const activeGoals = goalsData.goals?.filter((g: { status: string }) => g.status === "ACTIVE").length || 0;
-      const completedTrainings = trainingsData.filter((t: { status: string }) => t.status === "COMPLETED").length || 0;
-      const avgAttendance = attendanceData.length > 0
-        ? (attendanceData.filter((a: { status: string }) => a.status === "PRESENT").length / attendanceData.length * 100).toFixed(1)
-        : 0;
+      const activeGoals = goalItems.filter((g) => g.status === "ACTIVE").length;
+      const completedTrainings = trainingItems.filter((t) => t.status === "COMPLETED").length;
+      const presentCount = attendanceItems.filter((a) => a.status === "PRESENT").length;
+      const avgAttendance =
+        attendanceItems.length > 0
+          ? Number(((presentCount / attendanceItems.length) * 100).toFixed(1))
+          : 0;
 
       setMetrics({
-        totalEmployees: attendanceData.length || 0,
+        totalEmployees: attendanceItems.length,
         activeGoals,
         completedTrainings,
-        avgAttendance: parseFloat(avgAttendance as string),
+        avgAttendance,
       });
     } catch (error) {
       console.error("Error fetching HR data:", error);
@@ -73,16 +188,16 @@ export default function HRDashboard() {
   };
 
   const appraisalStatusData = [
-    { name: "Draft", value: appraisals.filter((a: { status: string }) => a.status === "DRAFT").length },
-    { name: "In Progress", value: appraisals.filter((a: { status: string }) => a.status === "IN_PROGRESS").length },
-    { name: "Completed", value: appraisals.filter((a: { status: string }) => a.status === "COMPLETED").length },
+    { name: "Draft", value: appraisals.filter((a) => a.status === "DRAFT").length },
+    { name: "In Progress", value: appraisals.filter((a) => a.status === "IN_PROGRESS").length },
+    { name: "Completed", value: appraisals.filter((a) => a.status === "COMPLETED").length },
   ];
 
   const goalProgressData = [
-    { name: "0-25%", value: goals.filter((g: { progressPercent: number }) => g.progressPercent <= 25).length },
-    { name: "25-50%", value: goals.filter((g: { progressPercent: number }) => g.progressPercent > 25 && g.progressPercent <= 50).length },
-    { name: "50-75%", value: goals.filter((g: { progressPercent: number }) => g.progressPercent > 50 && g.progressPercent <= 75).length },
-    { name: "75-100%", value: goals.filter((g: { progressPercent: number }) => g.progressPercent > 75).length },
+    { name: "0-25%", value: goals.filter((g) => toValidNumber(g.progressPercent) <= 25).length },
+    { name: "25-50%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 25 && toValidNumber(g.progressPercent) <= 50).length },
+    { name: "50-75%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 50 && toValidNumber(g.progressPercent) <= 75).length },
+    { name: "75-100%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 75).length },
   ];
 
   const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
@@ -252,7 +367,7 @@ export default function HRDashboard() {
           </div>
           <div className="space-y-3">
             {appraisals.length > 0 ? (
-              appraisals.slice(0, 5).map((appraisal: { id: string; employee?: { firstName: string; lastName: string }; appraisalType: string; appraisalDate: Date; selfRating: number; managerRating: number; status: string }) => (
+              appraisals.slice(0, 5).map((appraisal) => (
                 <Card key={appraisal.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -261,12 +376,12 @@ export default function HRDashboard() {
                           {appraisal.employee?.firstName} {appraisal.employee?.lastName}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {appraisal.appraisalType} - {new Date(appraisal.appraisalDate).toLocaleDateString()}
+                          {appraisal.appraisalType || "Appraisal"} - {formatDate(appraisal.appraisalDate)}
                         </p>
                         <div className="flex gap-4 mt-2 text-sm">
-                          <span>Self Rating: {appraisal.selfRating}/5</span>
-                          <span>Manager Rating: {appraisal.managerRating}/5</span>
-                          <span className="font-semibold">Status: {appraisal.status}</span>
+                          <span>Self Rating: {toValidNumber(appraisal.selfRating)}/5</span>
+                          <span>Manager Rating: {toValidNumber(appraisal.managerRating)}/5</span>
+                          <span className="font-semibold">Status: {appraisal.status || "N/A"}</span>
                         </div>
                       </div>
                       <Button variant="outline" size="sm">View Details</Button>
@@ -293,15 +408,15 @@ export default function HRDashboard() {
           </div>
           <div className="space-y-3">
             {trainings.length > 0 ? (
-              trainings.slice(0, 5).map((training: { id: string; title?: string; program?: { title: string }; category: string; status: string; completionPercent?: number }) => (
+              trainings.slice(0, 5).map((training) => (
                 <Card key={training.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold">{training.title || training.program?.title}</p>
-                        <p className="text-sm text-gray-600">{training.category}</p>
+                        <p className="font-semibold">{training.title || training.program?.title || "Training"}</p>
+                        <p className="text-sm text-gray-600">{training.category || "General"}</p>
                         <div className="flex gap-4 mt-2 text-sm">
-                          <span>Status: {training.status}</span>
+                          <span>Status: {training.status || "N/A"}</span>
                           {training.completionPercent !== undefined && (
                             <span>Progress: {training.completionPercent}%</span>
                           )}
@@ -338,7 +453,7 @@ export default function HRDashboard() {
           </div>
           <div className="space-y-3">
             {attendance.length > 0 ? (
-              attendance.slice(0, 5).map((record: { id: string; employee?: { firstName: string; lastName: string }; date: Date; status: string; checkIn?: Date; hoursWorked?: number; locationData?: { checkInLocation: string } }) => (
+              attendance.slice(0, 5).map((record) => (
                 <Card key={record.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -347,12 +462,12 @@ export default function HRDashboard() {
                           {record.employee?.firstName} {record.employee?.lastName}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(record.date).toLocaleDateString()}
+                          {formatDate(record.date)}
                         </p>
                         <div className="flex gap-4 mt-2 text-sm flex-wrap">
-                          <span>Status: {record.status}</span>
-                          {record.checkIn && <span>Check-in: {new Date(record.checkIn).toLocaleTimeString()}</span>}
-                          {record.hoursWorked && <span>Hours: {record.hoursWorked}h</span>}
+                          <span>Status: {record.status || "N/A"}</span>
+                          {record.checkIn && <span>Check-in: {formatTime(record.checkIn)}</span>}
+                          {record.hoursWorked !== undefined && <span>Hours: {record.hoursWorked}h</span>}
                           {record.locationData?.checkInLocation && (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
@@ -385,14 +500,7 @@ export default function HRDashboard() {
           </div>
           <div className="space-y-3">
             {goals.length > 0 ? (
-              goals.slice(0, 5).map((goal: {
-                id: string;
-                title: string;
-                dueDate: string | Date;
-                priority: string;
-                progressPercent: number;
-                employee?: { firstName: string; lastName: string };
-              }) => (
+              goals.slice(0, 5).map((goal) => (
                 <Card key={goal.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -402,14 +510,14 @@ export default function HRDashboard() {
                           {goal.employee?.firstName} {goal.employee?.lastName}
                         </p>
                         <div className="flex gap-4 mt-2 text-sm">
-                          <span>Due: {new Date(goal.dueDate).toLocaleDateString()}</span>
-                          <span>Priority: {goal.priority}</span>
-                          <span>Progress: {goal.progressPercent}%</span>
+                          <span>Due: {formatDate(goal.dueDate)}</span>
+                          <span>Priority: {goal.priority || "N/A"}</span>
+                          <span>Progress: {toValidNumber(goal.progressPercent)}%</span>
                         </div>
                         <div className="mt-3 bg-gray-200 rounded-full h-2 w-full">
                           <div
                             className="bg-blue-600 h-2 rounded-full transition-all"
-                            style={{ width: `${goal.progressPercent}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, toValidNumber(goal.progressPercent)))}%` }}
                           />
                         </div>
                       </div>
