@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
               id: true,
               employee: { select: { firstName: true, lastName: true } },
               status: true,
-              completionPercent: true,
+              score: true,
             },
           },
         },
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         program: {
           select: {
             id: true,
-            title: true,
+            name: true,
             description: true,
             category: true,
             duration: true,
@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
 
     // Create training program
     if (type === "program") {
-      const { title, description, category, provider, startDate, endDate, duration, maxParticipants, cost } = body;
+      const { name, description, category, provider, startDate, endDate, duration, maxParticipants, cost, format } = body;
 
-      if (!title || !category || !startDate || !endDate) {
+      if (!name || !category || !startDate || !endDate || !format) {
         return NextResponse.json(
           { error: "Missing required fields" },
           { status: 400 }
@@ -81,16 +81,17 @@ export async function POST(request: NextRequest) {
 
       const program = await prisma.trainingProgram.create({
         data: {
-          title,
+          name,
           description,
           category,
+          format,
           provider,
           startDate: new Date(startDate),
           endDate: new Date(endDate),
           duration: duration || 0,
           maxParticipants: maxParticipants || 0,
           cost: cost || 0,
-          status: "SCHEDULED",
+          status: "PLANNED",
         },
       });
 
@@ -99,11 +100,11 @@ export async function POST(request: NextRequest) {
 
     // Enroll employee in training
     if (type === "enrollment") {
-      const { employeeId, programId } = body;
+      const { employeeId, trainingId } = body;
 
-      if (!employeeId || !programId) {
+      if (!employeeId || !trainingId) {
         return NextResponse.json(
-          { error: "Employee ID and Program ID required" },
+          { error: "Employee ID and Training ID required" },
           { status: 400 }
         );
       }
@@ -111,13 +112,12 @@ export async function POST(request: NextRequest) {
       const enrollment = await prisma.trainingEnrollment.create({
         data: {
           employeeId,
-          programId,
+          trainingId,
           enrollmentDate: new Date(),
           status: "ENROLLED",
-          completionPercent: 0,
         },
         include: {
-          program: { select: { title: true, startDate: true } },
+          program: { select: { name: true, startDate: true } },
           employee: { select: { firstName: true, lastName: true } },
         },
       });
@@ -141,7 +141,7 @@ export async function PUT(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { enrollmentId, completionPercent, score, status } = body;
+    const { enrollmentId, score, status, completionDate } = body;
 
     if (!enrollmentId) {
       return NextResponse.json(
@@ -153,12 +153,12 @@ export async function PUT(request: NextRequest) {
     const enrollment = await prisma.trainingEnrollment.update({
       where: { id: enrollmentId },
       data: {
-        ...(completionPercent !== undefined && { completionPercent }),
         ...(score !== undefined && { score }),
         ...(status && { status }),
+        ...(completionDate && { completionDate: new Date(completionDate) }),
       },
       include: {
-        program: { select: { title: true } },
+        program: { select: { name: true } },
         employee: { select: { firstName: true, lastName: true } },
       },
     });
