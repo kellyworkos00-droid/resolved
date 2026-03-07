@@ -59,9 +59,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { budgetName, fiscalYear, budgetType, startDate, endDate, budgetLines } = body;
 
-    if (!budgetName || !fiscalYear || !budgetType || !startDate || !endDate) {
+    if (!budgetName || !fiscalYear || !budgetType || !startDate || !endDate || !Array.isArray(budgetLines) || budgetLines.length === 0) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const hasInvalidLine = budgetLines.some(
+      (line) => !line || typeof line !== 'object' || !(line as { accountId?: string }).accountId
+    );
+    if (hasInvalidLine) {
+      return NextResponse.json(
+        { error: 'Each budget line must include accountId' },
         { status: 400 }
       );
     }

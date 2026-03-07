@@ -61,9 +61,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { entryDate, description, lines, referenceType, referenceId, notes } = body;
 
-    if (!entryDate || !description || !lines || lines.length === 0) {
+    if (!entryDate || !description || !Array.isArray(lines) || lines.length === 0) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const hasInvalidLine = lines.some(
+      (line) => !line || typeof line !== 'object' || !(line as { accountId?: string }).accountId
+    );
+    if (hasInvalidLine) {
+      return NextResponse.json(
+        { error: 'Each journal line must include accountId' },
         { status: 400 }
       );
     }

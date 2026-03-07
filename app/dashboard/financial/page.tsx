@@ -13,6 +13,10 @@ interface FinancialSummary {
   totalEquity: number;
 }
 
+function toSafeNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
 export default function FinancialDashboard() {
   const [summary, setSummary] = useState<FinancialSummary>({
     accountsCount: 0,
@@ -35,13 +39,13 @@ export default function FinancialDashboard() {
       ]);
 
       const accounts = accountsRes.ok ? await accountsRes.json() : { count: 0, data: [] };
-      const journals = journalRes.ok ? await journalRes.json() : { count: 0, data: [] };
+      const journals = journalRes.ok ? await journalRes.json() : { total: 0, data: [] };
       const budgets = budgetsRes.ok ? await budgetsRes.json() : { count: 0, data: [] };
 
       setSummary({
-        accountsCount: accounts.count || 0,
-        journalEntriesCount: journals.total || 0,
-        budgetsCount: budgets.count || 0,
+        accountsCount: toSafeNumber(accounts?.count),
+        journalEntriesCount: toSafeNumber(journals?.total),
+        budgetsCount: toSafeNumber(budgets?.count),
         totalAssets: 0,
         totalLiabilities: 0,
         totalEquity: 0,
