@@ -65,8 +65,9 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Check if settings already exist
+    const organizationId = payload.organizationId || 'default';
     const existingSettings = await prisma.whatsAppCommerceSettings.findFirst({
-      where: { organizationId: payload.organizationId },
+      where: { organizationId },
     });
 
     let settings;
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       // Create new settings
       settings = await prisma.whatsAppCommerceSettings.create({
         data: {
-          organizationId: payload.organizationId,
+          organizationId,
           whatsappNumber,
           whatsappApiKey,
           whatsappWebhookUrl,
