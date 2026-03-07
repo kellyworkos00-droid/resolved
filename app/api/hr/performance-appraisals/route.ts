@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdDate: "desc" },
     });
 
     return NextResponse.json(appraisals);
