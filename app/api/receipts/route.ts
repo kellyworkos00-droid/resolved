@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: payments.map((payment: { id: string; paymentNumber: string; paymentDate: Date; amount: number; paymentMethod: string; reference: string; status: string }) => ({
+      data: payments.map((payment) => ({
         id: payment.id,
         paymentNumber: payment.paymentNumber,
         paymentDate: payment.paymentDate,
