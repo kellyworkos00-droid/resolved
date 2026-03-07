@@ -32,8 +32,11 @@ export default function ProductsPage() {
       const res = await fetch(`/api/products?page=${page}&limit=12&status=ACTIVE${categoryParam}`);
       if (res.ok) {
         const data = await res.json();
-        setProducts(data.data?.items || []);
-        setTotalPages(data.data?.pagination?.totalPages || 1);
+        const items = Array.isArray(data?.data?.items) ? data.data.items : [];
+        const totalPagesValue = Number(data?.data?.pagination?.totalPages);
+
+        setProducts(items);
+        setTotalPages(Number.isFinite(totalPagesValue) && totalPagesValue > 0 ? totalPagesValue : 1);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -53,12 +56,14 @@ export default function ProductsPage() {
     window.open(`https://wa.me/254700000000?text=${message}`, '_blank');
   };
 
-  const filteredProducts = products.filter(product =>
+  const safeProducts = Array.isArray(products) ? products : [];
+
+  const filteredProducts = safeProducts.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+  const categories = ['all', ...Array.from(new Set(safeProducts.map(p => p.category).filter(Boolean)))];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">

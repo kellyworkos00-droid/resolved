@@ -30,7 +30,7 @@ export default function ShopHomePage() {
       const res = await fetch('/api/products?limit=12&status=ACTIVE');
       if (res.ok) {
         const data = await res.json();
-        const items = data.data?.items || [];
+        const items = Array.isArray(data?.data?.items) ? data.data.items : [];
         setFeaturedProducts(items.slice(0, 6));
       }
     } catch (error) {
