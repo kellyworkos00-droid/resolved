@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 interface Invoice {
@@ -17,8 +17,11 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialCustomerId = searchParams.get('customerId') || '';
+  const collectAction = searchParams.get('action') === 'collect';
+  const collectInvoiceId = searchParams.get('invoiceId');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -33,6 +36,7 @@ export default function InvoicesPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [sendingSms, setSendingSms] = useState<string | null>(null); // Track invoice ID being sent SMS
+  const [collectRouteHandled, setCollectRouteHandled] = useState(false);
 
   useEffect(() => {
     setCustomerIdFilter(initialCustomerId);
@@ -63,6 +67,34 @@ export default function InvoicesPage() {
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  useEffect(() => {
+    if (!collectAction || !collectInvoiceId || collectRouteHandled || loading || invoices.length === 0) {
+      return;
+    }
+
+    const targetInvoice = invoices.find((invoice) => invoice.id === collectInvoiceId);
+    if (!targetInvoice) {
+      toast.error('Invoice not found for collection');
+      setCollectRouteHandled(true);
+      return;
+    }
+
+    if (targetInvoice.status === 'PAID') {
+      toast('This invoice is already paid');
+      setCollectRouteHandled(true);
+      return;
+    }
+
+    openPaymentModal(targetInvoice);
+    setCollectRouteHandled(true);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('action');
+    params.delete('invoiceId');
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `/dashboard/invoices?${nextQuery}` : '/dashboard/invoices');
+  }, [collectAction, collectInvoiceId, collectRouteHandled, invoices, loading, router, searchParams]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -343,7 +375,7 @@ export default function InvoicesPage() {
                         <button
                           onClick={() => openPaymentModal(invoice)}
                           className="text-green-600 hover:text-green-700 font-medium text-xs sm:text-sm"
-                          title="Record Payment"
+                          title="Collect Payment for this Invoice"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -353,7 +385,7 @@ export default function InvoicesPage() {
                           >
                             <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
                           </svg>
-                          <span className="hidden md:inline">Pay</span>
+                          <span className="hidden md:inline">Collect</span>
                         </button>
                         {/* SMS Reminder Button - only show for unpaid/overdue invoices with phone */}
                         {invoice.status !== 'PAID' && invoice.customer?.phone && (
