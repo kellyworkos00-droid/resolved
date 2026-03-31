@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Download, Filter, Clock } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Search } from 'lucide-react';
 import Link from 'next/link';
 
 interface AuditLog {
   id: string;
-  userId: string;
+  userId?: string;
   userName: string;
   action: string;
   resource: string;
@@ -16,80 +16,134 @@ interface AuditLog {
   status: 'success' | 'failed';
 }
 
+interface ApiAuditLog {
+  id: string;
+  userId?: string;
+  action: string;
+  entityType?: string | null;
+  description: string;
+  ipAddress?: string | null;
+  createdAt: string;
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+}
+
+function inferStatus(action: string, description: string): 'success' | 'failed' {
+  const text = `${action} ${description}`.toLowerCase();
+  if (text.includes('fail') || text.includes('error') || text.includes('reject')) {
+    return 'failed';
+  }
+  return 'success';
+}
+
+function toDisplayName(user?: ApiAuditLog['user']): string {
+  const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  if (fullName) return fullName;
+  return user?.email || 'System';
+}
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterAction, setFilterAction] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        setError('Please sign in to view audit logs.');
+        setLogs([]);
+        return;
+      }
+
+      const res = await fetch('/api/compliance/audit-logs?limit=500', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const payload = await res.json();
+      if (!res.ok) {
+        setError(payload?.error || 'Failed to load audit logs');
+        setLogs([]);
+        return;
+      }
+
+      const rawLogs: ApiAuditLog[] = Array.isArray(payload?.data) ? payload.data : [];
+
+      const mappedLogs: AuditLog[] = rawLogs.map((entry) => ({
+        id: entry.id,
+        userId: entry.userId,
+        userName: toDisplayName(entry.user),
+        action: entry.action || 'UNKNOWN',
+        resource: entry.entityType || 'System',
+        details: entry.description || '-',
+        ipAddress: entry.ipAddress || '-',
+        timestamp: entry.createdAt,
+        status: inferStatus(entry.action || '', entry.description || ''),
+      }));
+
+      setLogs(mappedLogs);
+    } catch (e) {
+      console.error('Failed to load audit logs:', e);
+      setError('Failed to load audit logs');
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadLogs = async () => {
-      try {
-        // Mock audit logs
-        const mockLogs: AuditLog[] = [
-          {
-            id: '1',
-            userId: 'user1',
-            userName: 'John Admin',
-            action: 'user_created',
-            resource: 'User',
-            details: 'Created new user: jane.doe@company.com',
-            ipAddress: '192.168.1.100',
-            timestamp: new Date().toISOString(),
-            status: 'success',
-          },
-          {
-            id: '2',
-            userId: 'user1',
-            userName: 'John Admin',
-            action: 'role_updated',
-            resource: 'Role',
-            details: 'Updated ADMIN role permissions',
-            ipAddress: '192.168.1.100',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            status: 'success',
-          },
-          {
-            id: '3',
-            userId: 'user2',
-            userName: 'Jane Manager',
-            action: 'login',
-            resource: 'Authentication',
-            details: 'User logged in',
-            ipAddress: '192.168.1.101',
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-            status: 'success',
-          },
-          {
-            id: '4',
-            userId: 'user3',
-            userName: 'Bob Finance',
-            action: 'login_failed',
-            resource: 'Authentication',
-            details: 'Failed login attempt',
-            ipAddress: '192.168.1.102',
-            timestamp: new Date(Date.now() - 10800000).toISOString(),
-            status: 'failed',
-          },
-        ];
-        setLogs(mockLogs);
-      } catch (error) {
-        console.error('Failed to load audit logs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLogs();
+    void loadLogs();
   }, []);
 
   const filteredLogs = logs.filter((log) => {
     if (filterAction !== 'all' && log.action !== filterAction) return false;
     if (filterStatus !== 'all' && log.status !== filterStatus) return false;
+    if (
+      searchTerm &&
+      !`${log.userName} ${log.action} ${log.resource} ${log.details} ${log.ipAddress}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    ) {
+      return false;
+    }
     return true;
   });
 
   const actions = [...new Set(logs.map((l) => l.action))];
+
+  const exportCsv = () => {
+    const header = ['Timestamp', 'User', 'Action', 'Resource', 'Details', 'IP Address', 'Status'];
+    const rows = filteredLogs.map((log) => [
+      new Date(log.timestamp).toLocaleString(),
+      log.userName,
+      log.action,
+      log.resource,
+      log.details,
+      log.ipAddress,
+      log.status,
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -107,18 +161,52 @@ export default function AuditLogsPage() {
               </Link>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
-              <Download className="h-4 w-4" />
-              Export
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => void loadLogs()}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </button>
+              <button
+                onClick={exportCsv}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Filters */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Search
+            </label>
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="User, action, details, IP..."
+                className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Filter by Action
@@ -201,7 +289,7 @@ export default function AuditLogsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{log.userName}</td>
                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {log.action.replace(/_/g, ' ')}
+                          {log.action.replace(/_/g, ' ').toUpperCase()}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{log.resource}</td>
                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{log.details}</td>
@@ -232,7 +320,7 @@ export default function AuditLogsPage() {
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Logs</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{logs.length}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{filteredLogs.length}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="text-sm text-gray-600 dark:text-gray-400">Success</p>
