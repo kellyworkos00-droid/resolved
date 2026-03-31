@@ -44,15 +44,30 @@ export default function ChartOfAccountsPage() {
 
   const loadAccounts = async () => {
     try {
-      const res = await fetch('/api/financial/chart-of-accounts');
+      setMessage(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage({ type: 'error', text: 'Please sign in to access accounts.' });
+        setAccounts([]);
+        setFilteredAccounts([]);
+        return;
+      }
+
+      const res = await fetch('/api/financial/chart-of-accounts', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const payload = res.ok ? await res.json() : null;
       const rows = Array.isArray(payload?.data) ? payload.data : [];
       setAccounts(rows);
       setFilteredAccounts(rows);
+      if (!res.ok) {
+        setMessage({ type: 'error', text: payload?.error || 'Failed to load accounts' });
+      }
     } catch (error) {
       console.error('Failed to load accounts:', error);
       setAccounts([]);
       setFilteredAccounts([]);
+      setMessage({ type: 'error', text: 'Failed to load accounts' });
     } finally {
       setLoading(false);
     }
@@ -90,9 +105,18 @@ export default function ChartOfAccountsPage() {
     setMessage(null);
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage({ type: 'error', text: 'Please sign in to create accounts.' });
+        return;
+      }
+
       const res = await fetch('/api/financial/chart-of-accounts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...formData,
           parentAccountId: formData.parentAccountId || null,

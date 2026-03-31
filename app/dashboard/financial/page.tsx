@@ -26,32 +26,73 @@ export default function FinancialDashboard() {
     totalLiabilities: 0,
     totalEquity: 0,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    fetchSummary();
+    void fetchSummary();
   }, []);
 
   const fetchSummary = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please sign in to view financial data.');
+        return;
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+      const today = new Date();
+      const start = new Date();
+      start.setDate(today.getDate() - 30);
+
       const [accountsRes, journalRes, budgetsRes] = await Promise.all([
-        fetch('/api/financial/chart-of-accounts'),
-        fetch('/api/financial/journal-entries'),
-        fetch('/api/financial/budgets'),
+        fetch('/api/financial/chart-of-accounts', { headers }),
+        fetch('/api/financial/journal-entries?limit=1', { headers }),
+        fetch('/api/financial/budgets', { headers }),
+      ]);
+
+      const [ledgerRes, cashFlowRes] = await Promise.all([
+        fetch('/api/financial/general-ledger?limit=1', { headers }),
+        fetch(
+          `/api/analytics/cash-flow?startDate=${start.toISOString().split('T')[0]}&endDate=${today
+            .toISOString()
+            .split('T')[0]}`,
+          { headers }
+        ),
       ]);
 
       const accounts = accountsRes.ok ? await accountsRes.json() : { count: 0, data: [] };
       const journals = journalRes.ok ? await journalRes.json() : { total: 0, data: [] };
       const budgets = budgetsRes.ok ? await budgetsRes.json() : { count: 0, data: [] };
+      const ledger = ledgerRes.ok ? await ledgerRes.json() : { total: 0 };
+      const cashFlow = cashFlowRes.ok ? await cashFlowRes.json() : { data: { forecasts: [] } };
+
+      const accountsList = Array.isArray(accounts?.data) ? accounts.data : [];
+      const bankAccountsCount = accountsList.filter((acc: { accountType?: string; accountName?: string; subType?: string }) => {
+        if (acc.accountType !== 'Asset') return false;
+        const name = (acc.accountName || '').toLowerCase();
+        const subType = (acc.subType || '').toLowerCase();
+        return name.includes('bank') || subType.includes('bank') || name.includes('cash');
+      }).length;
+
+      const cashFlowPoints = Array.isArray(cashFlow?.data?.forecasts) ? cashFlow.data.forecasts.length : 0;
 
       setSummary({
         accountsCount: toSafeNumber(accounts?.count),
         journalEntriesCount: toSafeNumber(journals?.total),
         budgetsCount: toSafeNumber(budgets?.count),
-        totalAssets: 0,
-        totalLiabilities: 0,
-        totalEquity: 0,
+        totalAssets: bankAccountsCount,
+        totalLiabilities: toSafeNumber(ledger?.total),
+        totalEquity: cashFlowPoints,
       });
     } catch (error) {
       console.error('Error fetching summary:', error);
+      setError('Failed to load financial summary.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +119,7 @@ export default function FinancialDashboard() {
       icon: LineChart,
       href: '/dashboard/financial/general-ledger',
       color: 'from-purple-500 to-purple-600',
-      count: 0,
+      count: summary.totalLiabilities,
     },
     {
       title: 'Bank Accounts',
@@ -86,7 +127,7 @@ export default function FinancialDashboard() {
       icon: DollarSign,
       href: '/dashboard/financial/bank-accounts',
       color: 'from-orange-500 to-orange-600',
-      count: 0,
+      count: summary.totalAssets,
     },
     {
       title: 'Budgets',
@@ -102,12 +143,23 @@ export default function FinancialDashboard() {
       icon: TrendingUp,
       href: '/dashboard/financial/cash-flow',
       color: 'from-indigo-500 to-indigo-600',
-      count: 0,
+      count: summary.totalEquity,
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-80">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+      )}
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -177,7 +229,7 @@ export default function FinancialDashboard() {
                   <Icon className="w-6 h-6" />
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/20">
                 <span className="text-sm font-semibold">{module.count} items</span>
                 <Plus className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
