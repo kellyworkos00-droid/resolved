@@ -6,8 +6,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard,
-  Upload,
-  GitCompare,
   Users,
   FileText,
   LogOut,
@@ -41,6 +39,8 @@ import {
   Target,
   BookOpen,
   Clock,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -52,6 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     role?: string;
   } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<string[]>(['stock', 'reports']);
 
@@ -70,6 +71,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const stored = localStorage.getItem('erp_sound_muted');
     setSoundMuted(stored === 'true');
+
+    const collapsed = localStorage.getItem('erp_sidebar_collapsed');
+    setSidebarCollapsed(collapsed === 'true');
   }, []);
 
   useEffect(() => {
@@ -95,9 +99,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const toggleDropdown = (name: string) => {
+    if (sidebarCollapsed) {
+      setSidebarCollapsed(false);
+      localStorage.setItem('erp_sidebar_collapsed', 'false');
+      return;
+    }
+
     setOpenDropdowns((prev) =>
       prev.includes(name) ? prev.filter((d) => d !== name) : [...prev, name]
     );
+  };
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('erp_sidebar_collapsed', String(next));
+      return next;
+    });
   };
 
   const navigation = [
@@ -218,11 +236,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside
         className={`${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 z-50 w-64 bg-white/85 backdrop-blur border-r border-white/70 shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0`}
+        } fixed inset-y-0 left-0 z-50 w-64 bg-white/85 backdrop-blur border-r border-white/70 shadow-lg transition-all duration-300 ease-in-out lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
+        onTouchStart={() => {
+          if (sidebarCollapsed) {
+            setSidebarCollapsed(false);
+            localStorage.setItem('erp_sidebar_collapsed', 'false');
+          }
+        }}
       >
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-white/70">
+          <div className={`h-16 flex items-center justify-between border-b border-white/70 ${sidebarCollapsed ? 'px-3' : 'px-6'}`}>
             <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
               <div className="relative w-10 h-10 rounded-lg overflow-hidden">
                 <Image
@@ -233,7 +257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="rounded-lg object-cover"
                 />
               </div>
-              <div>
+              <div className={sidebarCollapsed ? 'hidden' : ''}>
                 <span className="text-sm font-display font-bold text-gray-900">Elegant Steel</span>
                 <p className="text-xs text-gray-600">ERP Suite</p>
               </div>
@@ -254,23 +278,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div key={item.name}>
                     <button
                       onClick={() => toggleDropdown(item.name.toLowerCase().replace(/\s+/g, '-'))}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                      title={item.name}
+                      className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'} py-3 text-sm font-medium rounded-lg transition-colors ${
                         hasActiveChild
                           ? 'bg-white/80 text-primary-700 shadow-sm'
                           : 'text-gray-700 hover:bg-white/70'
                       }`}
                     >
                       <div className="flex items-center">
-                        <item.icon className="w-5 h-5 mr-3" />
-                        {item.name}
+                        <item.icon className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+                        {!sidebarCollapsed && item.name}
                       </div>
-                      {isOpen ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
+                      {!sidebarCollapsed &&
+                        (isOpen ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        ))}
                     </button>
-                    {isOpen && item.items && (
+                    {isOpen && item.items && !sidebarCollapsed && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.items.map((subItem) => {
                           const isActive = pathname === subItem.href;
@@ -303,14 +329,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  title={item.name}
+                  onClick={() => {
+                    if (sidebarCollapsed) {
+                      setSidebarCollapsed(false);
+                      localStorage.setItem('erp_sidebar_collapsed', 'false');
+                    }
+                  }}
+                  className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
                       ? 'bg-white/80 text-primary-700 shadow-sm'
                       : 'text-gray-700 hover:bg-white/70'
                   }`}
                 >
-                  <item.icon className="w-5 h-5 mr-3" />
-                  {item.name}
+                  <item.icon className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+                  {!sidebarCollapsed && item.name}
                 </Link>
               );
             })}
@@ -318,14 +351,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* User section */}
           <div className="p-4 border-t border-white/70">
-            <div className="flex items-center mb-3">
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center mb-0' : 'mb-3'}`}>
               <div className="w-10 h-10 bg-white/80 border border-white/60 rounded-full flex items-center justify-center shadow-sm">
                 <span className="text-primary-700 font-semibold text-sm">
                   {user.firstName?.charAt(0)}
                   {user.lastName?.charAt(0)}
                 </span>
               </div>
-              <div className="ml-3 flex-1">
+              <div className={`ml-3 flex-1 ${sidebarCollapsed ? 'hidden' : ''}`}>
                 <p className="text-sm font-medium text-gray-900">
                   {user.firstName} {user.lastName}
                 </p>
@@ -334,17 +367,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white/70 rounded-lg transition-colors"
+              title="Sign Out"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2 mt-3' : 'px-4'} py-2 text-sm font-medium text-gray-700 hover:bg-white/70 rounded-lg transition-colors`}
             >
-              <LogOut className="w-4 h-4 mr-3" />
-              Sign Out
+              <LogOut className={`w-4 h-4 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+              {!sidebarCollapsed && 'Sign Out'}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* Top bar */}
         <header className="h-16 bg-white/80 backdrop-blur border-b border-white/70 flex items-center px-6">
           <button
@@ -352,6 +386,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="lg:hidden mr-4"
           >
             <Menu className="w-6 h-6 text-gray-500" />
+          </button>
+          <button
+            onClick={toggleSidebarCollapsed}
+            className="hidden lg:inline-flex mr-4 items-center justify-center w-9 h-9 rounded-lg border border-white/70 bg-white/60 hover:bg-white/80 transition-colors"
+            title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4 text-gray-600" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4 text-gray-600" />
+            )}
           </button>
           <div className="flex-1">
             <h2 className="text-lg font-display font-semibold text-gray-900">
