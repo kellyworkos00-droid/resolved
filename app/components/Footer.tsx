@@ -33,7 +33,6 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Product</h4>
             <ul className="space-y-2">
               <li><Link href="/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Dashboard</Link></li>
-              <li><Link href="/dashboard/reconcile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Reconciliation</Link></li>
               <li><Link href="/dashboard/reports" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Reports</Link></li>
               <li><Link href="/dashboard/pos" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">POS</Link></li>
             </ul>
@@ -44,9 +43,7 @@ export function Footer() {
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Features</h4>
             <ul className="space-y-2">
               <li><Link href="/dashboard/invoices" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Invoicing</Link></li>
-              <li><Link href="/dashboard/inventory" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Inventory</Link></li>
               <li><Link href="/dashboard/customers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">CRM</Link></li>
-              <li><Link href="/dashboard/hr" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">HR</Link></li>
             </ul>
           </div>
 

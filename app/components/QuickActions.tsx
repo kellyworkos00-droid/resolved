@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Upload, UserPlus, ShoppingCart } from 'lucide-react';
+import { Plus, UserPlus, ShoppingCart } from 'lucide-react';
 
 export interface QuickAction {
   label: string;
@@ -20,12 +20,6 @@ const DEFAULT_ACTIONS: QuickAction[] = [
     href: '/dashboard/invoices/new',
     icon: <Plus className="w-5 h-5" />,
     color: 'blue',
-  },
-  {
-    label: 'Upload Statement',
-    href: '/dashboard/upload',
-    icon: <Upload className="w-5 h-5" />,
-    color: 'green',
   },
   {
     label: 'Add Customer',

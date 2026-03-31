@@ -29,18 +29,15 @@ interface Command {
 const COMMANDS: Command[] = [
   // Navigation
   { id: 'dashboard', label: 'Dashboard', description: 'Go to main dashboard', href: '/dashboard', icon: <Home className="w-4 h-4" />, category: 'Navigation' },
-  { id: 'reconcile', label: 'Reconciliation', description: 'Bank statement reconciliation', href: '/dashboard/reconcile', icon: <BarChart3 className="w-4 h-4" />, category: 'Navigation' },
   { id: 'invoices', label: 'Invoices', description: 'Manage invoices', href: '/dashboard/invoices', icon: <FileText className="w-4 h-4" />, category: 'Navigation' },
   { id: 'customers', label: 'Customers', description: 'Customer management', href: '/dashboard/customers', icon: <Users className="w-4 h-4" />, category: 'Navigation' },
   { id: 'suppliers', label: 'Suppliers', description: 'Supplier management', href: '/dashboard/suppliers', icon: <Building2 className="w-4 h-4" />, category: 'Navigation' },
   { id: 'products', label: 'Products', description: 'Product catalog', href: '/dashboard/products', icon: <Package className="w-4 h-4" />, category: 'Navigation' },
-  { id: 'inventory', label: 'Inventory', description: 'Stock levels', href: '/dashboard/stock-levels', icon: <Package className="w-4 h-4" />, category: 'Navigation' },
   { id: 'pos', label: 'Point of Sale', description: 'POS system', href: '/dashboard/pos', icon: <ShoppingCart className="w-4 h-4" />, category: 'Navigation' },
   { id: 'reports', label: 'Reports', description: 'Financial reports', href: '/dashboard/reports', icon: <BarChart3 className="w-4 h-4" />, category: 'Navigation' },
   { id: 'expenses', label: 'Expenses', description: 'Expense tracking', href: '/dashboard/expenses', icon: <Wallet className="w-4 h-4" />, category: 'Navigation' },
   { id: 'purchase-orders', label: 'Purchase Orders', description: 'Manage POs', href: '/dashboard/purchase-orders', icon: <ShoppingCart className="w-4 h-4" />, category: 'Navigation' },
   { id: 'sales-orders', label: 'Sales Orders', description: 'Manage sales', href: '/dashboard/sales-orders', icon: <CreditCard className="w-4 h-4" />, category: 'Navigation' },
-  { id: 'hr', label: 'HR Management', description: 'Human resources', href: '/dashboard/hr', icon: <Users className="w-4 h-4" />, category: 'Navigation' },
   { id: 'projects', label: 'Projects', description: 'Project management', href: '/dashboard/projects', icon: <TrendingUp className="w-4 h-4" />, category: 'Navigation' },
 ];
 

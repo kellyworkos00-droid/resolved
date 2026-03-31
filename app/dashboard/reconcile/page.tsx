@@ -266,13 +266,6 @@ export default function ReconcilePage() {
           <p className="text-gray-600 mt-1">Match bank transactions with customer payments</p>
         </div>
         <div className="flex gap-3">
-          <Link
-            href="/dashboard/reconcile/upload"
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Upload Statement
-          </Link>
           <button
             onClick={() => fetchTransactions()}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-2"
@@ -490,16 +483,8 @@ export default function ReconcilePage() {
               </div>
               <p className="text-gray-600 font-medium mb-2">No transactions found</p>
               <p className="text-sm text-gray-500 mb-4">
-                {searchTerm || statusFilter ? 'Try changing your filters' : 'Upload a bank statement to get started'}
+                {searchTerm || statusFilter ? 'Try changing your filters' : 'No transactions available yet'}
               </p>
-              {!searchTerm && !statusFilter && (
-                <Link
-                  href="/dashboard/reconcile/upload"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-                >
-                  Upload Statement
-                </Link>
-              )}
             </div>
           ) : (
             <table className="w-full text-sm">

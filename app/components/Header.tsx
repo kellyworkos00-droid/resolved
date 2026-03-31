@@ -45,9 +45,6 @@ export default function Header() {
             <Link href="/dashboard" className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 transition-colors">
               Dashboard
             </Link>
-            <Link href="/dashboard/reconcile" className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 transition-colors">
-              Reconcile
-            </Link>
             <Link href="/dashboard/pos" className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 transition-colors">
               POS
             </Link>
@@ -78,9 +75,6 @@ export default function Header() {
             </Link>
             <Link href="/dashboard" className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors">
               Dashboard
-            </Link>
-            <Link href="/dashboard/reconcile" className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors">
-              Reconcile
             </Link>
             <Link href="/dashboard/pos" className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-700 dark:hover:text-primary-400 rounded-full hover:bg-white/70 dark:hover:bg-gray-700 transition-colors">
               POS

@@ -56,22 +56,6 @@ const modules: ControlModule[] = [
     requiredRole: 'ADMIN',
   },
   {
-    title: 'Reconciliation',
-    description: 'Control payments matching, bank sync, and transaction verification.',
-    href: '/dashboard/reconcile',
-    icon: ShieldCheck,
-    category: 'operations',
-    requiredRole: 'ADMIN',
-  },
-  {
-    title: 'Inventory',
-    description: 'Control stock levels, transfers, warehouses, and adjustments.',
-    href: '/dashboard/inventory',
-    icon: Package,
-    category: 'operations',
-    requiredRole: 'ADMIN',
-  },
-  {
     title: 'Sales & POS',
     description: 'Control quotes, orders, invoicing flow, and point-of-sale operations.',
     href: '/dashboard/pos',

@@ -102,8 +102,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Upload Statement', href: '/dashboard/upload', icon: Upload },
-    { name: 'Reconcile', href: '/dashboard/reconcile', icon: GitCompare },
     { name: 'Customers', href: '/dashboard/customers', icon: Users },
     {
       name: 'Financial Management',
@@ -176,8 +174,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Supplier Bills', href: '/dashboard/supplier-bills', icon: Receipt },
     { name: 'Supplier Aging', href: '/dashboard/supplier-aging', icon: BarChart3 },
     { name: 'Expenses', href: '/dashboard/expenses', icon: Receipt },
-    { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
-    { name: 'HR & Payroll', href: '/dashboard/hr', icon: Users },
     { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
     { name: 'Fixed Assets', href: '/dashboard/fixed-assets', icon: Building2 },
     { name: 'Audit & Compliance', href: '/dashboard/audit-compliance', icon: ShieldAlert },
