@@ -45,7 +45,7 @@ export default function InvoicesPage() {
   const fetchInvoices = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      let url = '/api/invoices?limit=50';
+      let url = '/api/invoices?all=true';
       if (statusFilter) url += `&status=${statusFilter}`;
       if (customerIdFilter) url += `&customerId=${customerIdFilter}`;
 

@@ -14,8 +14,11 @@ export async function GET(request: NextRequest) {
     await requirePermission(request, 'invoice.view');
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const pageParam = parseInt(searchParams.get('page') || '1', 10);
+    const limitParam = parseInt(searchParams.get('limit') || '20', 10);
+    const all = searchParams.get('all') === 'true';
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 20;
     const customerId = searchParams.get('customerId');
     const status = searchParams.get('status');
 
@@ -26,19 +29,28 @@ export async function GET(request: NextRequest) {
       ...(status ? { status } : {}),
     };
 
-    const [invoices, total] = await Promise.all([
-      prisma.invoice.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { issueDate: 'desc' },
-        include: {
-          customer: true,
-          payments: true,
-        },
-      }),
-      prisma.invoice.count({ where }),
-    ]);
+    const queryBase = {
+      where,
+      orderBy: { issueDate: 'desc' as const },
+      include: {
+        customer: true,
+        payments: true,
+      },
+    };
+
+    const [invoices, total] = all
+      ? await Promise.all([
+          prisma.invoice.findMany(queryBase),
+          prisma.invoice.count({ where }),
+        ])
+      : await Promise.all([
+          prisma.invoice.findMany({
+            ...queryBase,
+            skip,
+            take: limit,
+          }),
+          prisma.invoice.count({ where }),
+        ]);
 
     // Calculate accurate status for each invoice based on actual payment amounts
     const invoicesWithAccurateStatus = invoices.map((invoice) => {
@@ -63,10 +75,10 @@ export async function GET(request: NextRequest) {
       createSuccessResponse({
         invoices: invoicesWithAccurateStatus,
         pagination: {
-          page,
-          limit,
+          page: all ? 1 : page,
+          limit: all ? total : limit,
           total,
-          totalPages: Math.ceil(total / limit),
+          totalPages: all ? 1 : Math.ceil(total / limit),
         },
       }),
       { status: 200 }

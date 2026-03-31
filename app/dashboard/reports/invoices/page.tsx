@@ -39,6 +39,7 @@ export default function InvoiceReportPage() {
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams();
+      params.append('all', 'true');
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
       if (statusFilter) params.append('status', statusFilter);
@@ -49,7 +50,7 @@ export default function InvoiceReportPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data.data?.items || []);
+        setInvoices(data.data?.invoices || data.data?.items || []);
       }
     } catch (error) {
       console.error('Error fetching invoices:', error);
