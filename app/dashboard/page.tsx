@@ -567,7 +567,7 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-6 py-3 text-right">
                         <Link
-                          href={`/dashboard/invoices?action=collect&invoiceId=${invoice.id}`}
+                          href={`/dashboard/collections?invoiceId=${invoice.id}`}
                           className="text-primary-600 hover:text-primary-700 font-medium text-sm"
                         >
                           Collect

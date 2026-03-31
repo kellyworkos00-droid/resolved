@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -372,8 +373,8 @@ export default function InvoicesPage() {
                           </svg>
                           <span className="hidden md:inline">Download</span>
                         </button>
-                        <button
-                          onClick={() => openPaymentModal(invoice)}
+                        <Link
+                          href={`/dashboard/collections?invoiceId=${invoice.id}`}
                           className="text-green-600 hover:text-green-700 font-medium text-xs sm:text-sm"
                           title="Collect Payment for this Invoice"
                         >
@@ -386,7 +387,7 @@ export default function InvoicesPage() {
                             <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
                           </svg>
                           <span className="hidden md:inline">Collect</span>
-                        </button>
+                        </Link>
                         {/* SMS Reminder Button - only show for unpaid/overdue invoices with phone */}
                         {invoice.status !== 'PAID' && invoice.customer?.phone && (
                           <button
@@ -761,14 +762,14 @@ export default function InvoicesPage() {
                 <button
                   onClick={() => {
                     setShowDetailsModal(false);
-                    openPaymentModal(selectedInvoice);
+                    router.push(`/dashboard/collections?invoiceId=${selectedInvoice.id}`);
                   }}
                   className="flex-1 btn btn-success"
                 >
                   <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
                   </svg>
-                  Record Payment
+                  Go to Collection
                 </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
