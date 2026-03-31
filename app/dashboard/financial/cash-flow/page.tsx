@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Forecast = {
   date: string;
@@ -30,7 +30,7 @@ export default function CashFlowPage() {
       minimumFractionDigits: 2,
     }).format(value || 0);
 
-  const loadCashFlow = async () => {
+  const loadCashFlow = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -61,11 +61,11 @@ export default function CashFlowPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     void loadCashFlow();
-  }, []);
+  }, [loadCashFlow]);
 
   const totals = useMemo(() => {
     const totalInflows = forecasts.reduce((sum, row) => sum + row.inflows, 0);

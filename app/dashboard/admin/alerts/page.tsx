@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bell, Slack, Mail, AlertCircle, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Bell, Slack, Mail, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 

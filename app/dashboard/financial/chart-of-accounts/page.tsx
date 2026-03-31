@@ -162,7 +162,7 @@ export default function ChartOfAccountsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Chart of Accounts</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage your organization's account structure
+            Manage your organization&apos;s account structure
           </p>
         </div>
         <button

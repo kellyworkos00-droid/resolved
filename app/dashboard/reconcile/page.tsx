@@ -14,7 +14,6 @@ import {
   FileText,
   Zap,
 } from 'lucide-react';
-import Link from 'next/link';
 
 interface PaymentPreview {
   customer?: { name?: string | null } | null;

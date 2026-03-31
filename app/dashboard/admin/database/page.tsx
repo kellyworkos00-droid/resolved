@@ -16,7 +16,7 @@ interface Backup {
 export default function DatabaseManagementPage() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [databaseSize, setDatabaseSize] = useState('2.4 GB');
+  const [databaseSize] = useState('2.4 GB');
   const [backingUp, setBackingUp] = useState(false);
 
   useEffect(() => {

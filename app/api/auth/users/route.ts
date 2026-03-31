@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
-import { requireRoles } from '@/lib/authorization';
+import { requireAuth } from '@/lib/authorization';
 import { createSuccessResponse, createErrorResponse } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireRoles(request, ['ADMIN'] as any);
+    const user = await requireAuth(request);
+    if (user.role !== 'ADMIN') {
+      throw new Error('Forbidden: Insufficient permissions');
+    }
 
     const users = await prisma.user.findMany({
       select: {
@@ -47,7 +50,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireRoles(request, ['ADMIN'] as any);
+    const actor = await requireAuth(request);
+    if (actor.role !== 'ADMIN') {
+      throw new Error('Forbidden: Insufficient permissions');
+    }
 
     const body = await request.json();
     const { email, firstName, lastName, role, password, isActive } = body;
@@ -84,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     const hashed = await hashPassword(password);
 
-    const user = await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         email: email.toLowerCase().trim(),
         firstName: firstName.trim(),
@@ -105,7 +111,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(createSuccessResponse(user, 'User created successfully'), { status: 201 });
+    return NextResponse.json(createSuccessResponse(createdUser, 'User created successfully'), { status: 201 });
   } catch (error) {
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message.startsWith('Forbidden'))) {
       return NextResponse.json(

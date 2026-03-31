@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, Edit2, Trash2, Lock, X, Check, UserCheck, UserX, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Lock, X, Check, UserCheck, UserX, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 interface User {

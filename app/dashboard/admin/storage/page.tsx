@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, HardDrive, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StorageBackupsPage() {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
-import { requireRoles } from '@/lib/authorization';
+import { requireAuth } from '@/lib/authorization';
 import { createSuccessResponse, createErrorResponse } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const actor = await requireRoles(request, ['ADMIN'] as any);
+    const actor = await requireAuth(request);
+    if (actor.role !== 'ADMIN') {
+      throw new Error('Forbidden: Insufficient permissions');
+    }
 
     const { id } = params;
     const body = await request.json();
@@ -71,7 +74,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
  */
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const actor = await requireRoles(request, ['ADMIN'] as any);
+    const actor = await requireAuth(request);
+    if (actor.role !== 'ADMIN') {
+      throw new Error('Forbidden: Insufficient permissions');
+    }
 
     const { id } = params;
 
@@ -113,7 +119,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  */
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireRoles(request, ['ADMIN'] as any);
+    const actor = await requireAuth(request);
+    if (actor.role !== 'ADMIN') {
+      throw new Error('Forbidden: Insufficient permissions');
+    }
 
     const { id } = params;
     const body = await request.json();

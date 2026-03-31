@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Clock,
   DollarSign,
-  Package,
   Users,
   ArrowRight,
   BarChart3,

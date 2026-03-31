@@ -8,7 +8,6 @@ import {
   Settings,
   Building2,
   ShieldCheck,
-  Package,
   BarChart3,
   Wallet,
   Users,
