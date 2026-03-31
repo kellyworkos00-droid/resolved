@@ -52,7 +52,7 @@ export default function SmsManagementPage() {
   const fetchUnpaidInvoices = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/invoices?limit=100&status=OVERDUE,SENT,PARTIALLY_PAID', {
+      const response = await fetch('/api/invoices?all=true&status=OVERDUE,SENT,PARTIALLY_PAID', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

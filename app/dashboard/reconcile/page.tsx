@@ -136,7 +136,7 @@ export default function ReconcilePage() {
   const fetchCustomerInvoices = async (customerId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/invoices?customerId=${customerId}&status=SENT`, {
+      const response = await fetch(`/api/invoices?customerId=${customerId}&status=SENT&all=true`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

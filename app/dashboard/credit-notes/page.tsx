@@ -164,7 +164,7 @@ export default function CreditNotesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/invoices?customerId=${custId}`, {
+      const response = await fetch(`/api/invoices?customerId=${custId}&all=true`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

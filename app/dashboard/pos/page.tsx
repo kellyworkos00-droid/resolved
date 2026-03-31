@@ -142,7 +142,7 @@ export default function POSPage() {
       setLoadingInvoices(true);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `/api/invoices?customerId=${selectedCustomerId}&limit=10`,
+        `/api/invoices?customerId=${selectedCustomerId}&all=true`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/authorization';
 import { createErrorResponse, createSuccessResponse } from '@/lib/utils';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 /**
  * GET /api/invoices
@@ -20,13 +21,23 @@ export async function GET(request: NextRequest) {
     const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 20;
     const customerId = searchParams.get('customerId');
-    const status = searchParams.get('status');
+    const statusParam = searchParams.get('status');
+    const statuses = statusParam
+      ? statusParam
+          .split(',')
+          .map((status) => status.trim())
+          .filter((status) => status.length > 0)
+      : [];
 
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.InvoiceWhereInput = {
       ...(customerId ? { customerId } : {}),
-      ...(status ? { status } : {}),
+      ...(statuses.length === 1
+        ? { status: statuses[0] }
+        : statuses.length > 1
+          ? { status: { in: statuses } }
+          : {}),
     };
 
     const queryBase = {
