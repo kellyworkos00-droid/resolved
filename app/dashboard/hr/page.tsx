@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
   Plus,
   TrendingUp,
   Clock,
+  RefreshCw,
+  Search,
 } from "lucide-react";
 
 type EmployeeSummary = {
@@ -107,12 +109,20 @@ function formatTime(value: string | Date | undefined): string {
   return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleTimeString();
 }
 
+function includesTerm(values: Array<string | undefined>, term: string): boolean {
+  if (!term) return true;
+  return values.some((value) => (value || "").toLowerCase().includes(term));
+}
+
 export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [appraisals, setAppraisals] = useState<AppraisalItem[]>([]);
   const [trainings, setTrainings] = useState<TrainingItem[]>([]);
   const [attendance, setAttendance] = useState<AttendanceItem[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics>({
     totalEmployees: 0,
     activeGoals: 0,
@@ -126,12 +136,29 @@ export default function HRDashboard() {
 
   const fetchHRData = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please sign in to access HR management.");
+        setAppraisals([]);
+        setTrainings([]);
+        setAttendance([]);
+        setGoals([]);
+        return;
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
       const [appraisalsRes, trainingsRes, attendanceRes, goalsRes] = await Promise.all([
-        fetch("/api/hr/performance-appraisals"),
-        fetch("/api/hr/training"),
-        fetch("/api/hr/attendance-location"),
-        fetch("/api/hr/employee-goals"),
+        fetch("/api/hr/performance-appraisals", { headers }),
+        fetch("/api/hr/training", { headers }),
+        fetch("/api/hr/attendance-location", { headers }),
+        fetch("/api/hr/employee-goals", { headers }),
       ]);
+
+      if (!appraisalsRes.ok || !trainingsRes.ok || !attendanceRes.ok || !goalsRes.ok) {
+        throw new Error("Failed to load one or more HR data sources.");
+      }
 
       const [appraisalsData, trainingsData, attendanceData, goalsData] = await Promise.all([
         appraisalsRes.json(),
@@ -184,20 +211,83 @@ export default function HRDashboard() {
       });
     } catch (error) {
       console.error("Error fetching HR data:", error);
+      setError(error instanceof Error ? error.message : "Failed to load HR dashboard");
+      setAppraisals([]);
+      setTrainings([]);
+      setAttendance([]);
+      setGoals([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const queryTerm = searchQuery.trim().toLowerCase();
+
+  const filteredAppraisals = useMemo(
+    () =>
+      appraisals.filter((appraisal) =>
+        includesTerm(
+          [
+            appraisal.employee?.firstName,
+            appraisal.employee?.lastName,
+            appraisal.status,
+            appraisal.appraisalType,
+          ],
+          queryTerm
+        )
+      ),
+    [appraisals, queryTerm]
+  );
+
+  const filteredTrainings = useMemo(
+    () =>
+      trainings.filter((training) =>
+        includesTerm(
+          [training.title, training.program?.title, training.status, training.category],
+          queryTerm
+        )
+      ),
+    [trainings, queryTerm]
+  );
+
+  const filteredAttendance = useMemo(
+    () =>
+      attendance.filter((record) =>
+        includesTerm(
+          [
+            record.employee?.firstName,
+            record.employee?.lastName,
+            record.status,
+            record.locationData?.checkInLocation,
+          ],
+          queryTerm
+        )
+      ),
+    [attendance, queryTerm]
+  );
+
+  const filteredGoals = useMemo(
+    () =>
+      goals.filter((goal) =>
+        includesTerm(
+          [goal.title, goal.employee?.firstName, goal.employee?.lastName, goal.priority, goal.status],
+          queryTerm
+        )
+      ),
+    [goals, queryTerm]
+  );
+
   const appraisalStatusData = [
-    { name: "Draft", value: appraisals.filter((a) => a.status === "DRAFT").length },
-    { name: "In Progress", value: appraisals.filter((a) => a.status === "IN_PROGRESS").length },
-    { name: "Completed", value: appraisals.filter((a) => a.status === "COMPLETED").length },
+    { name: "Draft", value: filteredAppraisals.filter((a) => a.status === "DRAFT").length },
+    { name: "In Progress", value: filteredAppraisals.filter((a) => a.status === "IN_PROGRESS").length },
+    { name: "Completed", value: filteredAppraisals.filter((a) => a.status === "COMPLETED").length },
   ];
 
   const goalProgressData = [
-    { name: "0-25%", value: goals.filter((g) => toValidNumber(g.progressPercent) <= 25).length },
-    { name: "25-50%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 25 && toValidNumber(g.progressPercent) <= 50).length },
-    { name: "50-75%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 50 && toValidNumber(g.progressPercent) <= 75).length },
-    { name: "75-100%", value: goals.filter((g) => toValidNumber(g.progressPercent) > 75).length },
+    { name: "0-25%", value: filteredGoals.filter((g) => toValidNumber(g.progressPercent) <= 25).length },
+    { name: "25-50%", value: filteredGoals.filter((g) => toValidNumber(g.progressPercent) > 25 && toValidNumber(g.progressPercent) <= 50).length },
+    { name: "50-75%", value: filteredGoals.filter((g) => toValidNumber(g.progressPercent) > 50 && toValidNumber(g.progressPercent) <= 75).length },
+    { name: "75-100%", value: filteredGoals.filter((g) => toValidNumber(g.progressPercent) > 75).length },
   ];
 
   const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
@@ -205,16 +295,49 @@ export default function HRDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
           <h1 className="text-3xl font-bold">HR Management</h1>
           <p className="text-gray-600">Advanced HR & Talent Management</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          New
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => void fetchHRData()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            New
+          </Button>
+        </div>
       </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative w-full md:max-w-md">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search people, statuses, goals, programs..."
+                className="pl-9"
+              />
+            </div>
+            <p className="text-sm text-gray-500">
+              Showing {filteredAppraisals.length + filteredTrainings.length + filteredAttendance.length + filteredGoals.length} matching records
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading && <p className="text-gray-600">Loading HR dashboard...</p>}
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -226,7 +349,7 @@ export default function HRDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.totalEmployees}</div>
+            <div className="text-2xl font-bold">{metrics.totalEmployees || filteredAttendance.length}</div>
             <p className="text-xs text-gray-600 mt-1">Active in system</p>
           </CardContent>
         </Card>
@@ -366,8 +489,8 @@ export default function HRDashboard() {
             </Button>
           </div>
           <div className="space-y-3">
-            {appraisals.length > 0 ? (
-              appraisals.slice(0, 5).map((appraisal) => (
+            {filteredAppraisals.length > 0 ? (
+              filteredAppraisals.slice(0, 8).map((appraisal) => (
                 <Card key={appraisal.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -407,8 +530,8 @@ export default function HRDashboard() {
             </Button>
           </div>
           <div className="space-y-3">
-            {trainings.length > 0 ? (
-              trainings.slice(0, 5).map((training) => (
+            {filteredTrainings.length > 0 ? (
+              filteredTrainings.slice(0, 8).map((training) => (
                 <Card key={training.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -452,8 +575,8 @@ export default function HRDashboard() {
             </div>
           </div>
           <div className="space-y-3">
-            {attendance.length > 0 ? (
-              attendance.slice(0, 5).map((record) => (
+            {filteredAttendance.length > 0 ? (
+              filteredAttendance.slice(0, 8).map((record) => (
                 <Card key={record.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -499,8 +622,8 @@ export default function HRDashboard() {
             </Button>
           </div>
           <div className="space-y-3">
-            {goals.length > 0 ? (
-              goals.slice(0, 5).map((goal) => (
+            {filteredGoals.length > 0 ? (
+              filteredGoals.slice(0, 8).map((goal) => (
                 <Card key={goal.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
