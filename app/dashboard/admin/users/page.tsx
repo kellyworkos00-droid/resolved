@@ -63,7 +63,7 @@ export default function UsersManagementPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) { setError(data?.error || 'Failed to load users'); return; }
+      if (!res.ok) { setError(data?.error?.message || 'Failed to load users'); return; }
       const usersData: User[] = Array.isArray(data?.data) ? data.data : [];
       setUsers(usersData);
       setFilteredUsers(usersData);
@@ -120,7 +120,7 @@ export default function UsersManagementPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) { showToast(data?.error || 'Failed to create user'); return; }
+    if (!res.ok) { showToast(data?.error?.message || 'Failed to create user'); return; }
       showToast('User created successfully');
       closeModal();
       loadUsers();
@@ -140,7 +140,7 @@ export default function UsersManagementPage() {
         body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName, role: form.role, isActive: form.isActive }),
       });
       const data = await res.json();
-      if (!res.ok) { showToast(data?.error || 'Failed to update user'); return; }
+      if (!res.ok) { showToast(data?.error?.message || 'Failed to update user'); return; }
       showToast('User updated successfully');
       closeModal();
       loadUsers();
@@ -158,7 +158,7 @@ export default function UsersManagementPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) { showToast(data?.error || 'Failed to deactivate user'); return; }
+      if (!res.ok) { showToast(data?.error?.message || 'Failed to deactivate user'); return; }
       showToast('User deactivated');
       loadUsers();
     } catch { showToast('Failed to deactivate user'); }
@@ -190,7 +190,7 @@ export default function UsersManagementPage() {
         body: JSON.stringify({ password: newPassword }),
       });
       const data = await res.json();
-      if (!res.ok) { showToast(data?.error || 'Failed to reset password'); return; }
+      if (!res.ok) { showToast(data?.error?.message || 'Failed to reset password'); return; }
       showToast('Password reset successfully');
       closeModal();
     } finally {
