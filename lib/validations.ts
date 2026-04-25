@@ -25,7 +25,16 @@ export const createUserSchema = z.object({
     .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
-  role: z.enum(['ADMIN', 'FINANCE_MANAGER', 'FINANCE_STAFF', 'VIEWER']),
+  role: z.enum([
+    'ADMIN',
+    'OWNER',
+    'FINANCE_MANAGER',
+    'FINANCE_STAFF',
+    'VIEWER',
+    'POS_OPERATOR',
+    'MARKETING_AGENT',
+    'SALES_AGENT',
+  ]),
 });
 
 // ============================================================================

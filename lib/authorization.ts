@@ -1,5 +1,13 @@
 // UserRole enum values for type safety
-type UserRole = 'ADMIN' | 'FINANCE_MANAGER' | 'FINANCE_STAFF' | 'VIEWER' | 'POS_OPERATOR';
+type UserRole =
+  | 'ADMIN'
+  | 'OWNER'
+  | 'FINANCE_MANAGER'
+  | 'FINANCE_STAFF'
+  | 'VIEWER'
+  | 'POS_OPERATOR'
+  | 'MARKETING_AGENT'
+  | 'SALES_AGENT';
 import { NextRequest } from 'next/server';
 import { extractToken, verifyToken, JWTPayload } from './auth';
 import prisma from './prisma';
@@ -9,6 +17,7 @@ import prisma from './prisma';
  */
 const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ADMIN: ['*'], // Full access
+  OWNER: ['*'],
   POS_OPERATOR: [
     'pos.view',
     'pos.create',
@@ -17,6 +26,18 @@ const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'pos.payment',
     'invoice.view',
     'customer.view',
+  ],
+  MARKETING_AGENT: [
+    'customer.view',
+    'marketing_form.create',
+    'marketing_form.view',
+    'marketing_form.edit',
+  ],
+  SALES_AGENT: [
+    'customer.view',
+    'marketing_form.create',
+    'marketing_form.view',
+    'marketing_form.edit',
   ],
   FINANCE_MANAGER: [
     'reconciliation.upload',

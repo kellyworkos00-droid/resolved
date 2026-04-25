@@ -61,6 +61,7 @@ model User {
   budgets              Budget[]
   budgetReviews        BudgetReview[]
   cashFlowForecasts    CashFlowForecast[]
+  marketingVisitForms  MarketingVisitForm[] @relation("MarketingVisitFormCreator")
 
   @@map("users")
 }
@@ -170,6 +171,31 @@ model Customer {
   @@index([currentBalance])
   @@index([totalOutstanding])
   @@map("customers")
+}
+
+model MarketingVisitForm {
+  id                  String   @id @default(cuid())
+  customerName        String
+  customerPhone       String?
+  customerEmail       String?
+  siteName            String
+  locationDescription String
+  latitude            Float?
+  longitude           Float?
+  photoUrl            String?
+  knowsElegant        Boolean
+  clientFeedback      String?
+  routeName           String
+  createdBy           String
+  editCount           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  createdByUser       User     @relation("MarketingVisitFormCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("marketing_visit_forms")
 }
 
 // ============================================================================

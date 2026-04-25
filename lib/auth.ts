@@ -2,7 +2,15 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 // UserRole enum values for type safety
-export type UserRole = 'ADMIN' | 'FINANCE_MANAGER' | 'FINANCE_STAFF' | 'VIEWER';
+export type UserRole =
+  | 'ADMIN'
+  | 'OWNER'
+  | 'FINANCE_MANAGER'
+  | 'FINANCE_STAFF'
+  | 'VIEWER'
+  | 'POS_OPERATOR'
+  | 'MARKETING_AGENT'
+  | 'SALES_AGENT';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-min-32-characters-long';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
